@@ -789,11 +789,62 @@ git push -u origin main
 - `90813e8` - "Initial commit: 3D selainpeli Three.js:llä" (alkuperäinen versio)
 - `6058a6e` - "Initial commit: Three.js 3D game with player movement, coins, and obstacles" (ensimmäinen GitHub-push)
 - `112df0e` - "Päivitetty projektin historia: GitHub-tallennus dokumentoitu" (historian päivitys)
+- `f277ca2` - "Lisätty Git commit -historia projektin dokumentaatioon"
+- `f870377` - "Lisätty viholliset jotka jahtaavat pelaajaa"
+
+---
+
+### Vaihe 5: Jahtaavat Viholliset
+
+#### ❓ Kysymys #5
+> "Palatan pelin pariin. Miten saamme vastustajat jahtaamaan pelihahmoa?"
+
+#### 💡 Vastaus #5
+**Toimenpide:** Älyllisten vihollisten lisääminen peliin
+
+**Toteutetut ominaisuudet:**
+1. ✅ Vihollisten luonti (magentanväriset pallot)
+2. ✅ AI-logiikka: viholliset jahtaavat pelaajaa
+3. ✅ Vihollisten spawn satunnaisiin paikkoihin kaukana pelaajasta
+4. ✅ Vaihtelevat nopeudet (0.05-0.08) jokaiselle viholliselle
+5. ✅ Visuaalinen efekti: vihollinen pyörii jahtaessaan
+6. ✅ Törmäystunnistus pelaajan ja vihollisten välillä
+7. ✅ Game over kun vihollinen saa pelaajan kiinni
+8. ✅ Päivitetty UI-ohje vihollisista
+
+**Tekninen toteutus:**
+```javascript
+// Lasketaan suunta pelaajaan
+const direction = new THREE.Vector3();
+direction.subVectors(player.position, enemy.position);
+direction.y = 0; // Älä liiku Y-akselilla
+direction.normalize();
+
+// Liiku pelaajaa kohti
+enemy.position.x += direction.x * enemy.speed;
+enemy.position.z += direction.z * enemy.speed;
+```
+
+**Pelin dynamiikka:**
+- 🎯 5 vihollista spawn-autetaan peliin
+- 🏃 Viholliset liikkuvat aina pelaajaa kohti
+- ⚡ Vaihtelevat nopeudet tekevät pelistä haastavamman
+- 💀 Törmäys viholliseen = peli päättyy
+- 🎨 Magentanväri erottuu selkeästi (helppo havaita)
+
+**Muokatut tiedostot:**
+- `game.js` - Lisätty vihollislogiikka ja AI
+- `index.html` - Päivitetty ohjeet
+
+**Tulos:**
+- ✅ Peli nyt haastavampi ja dynaamisempi
+- ✅ Pelaajan täytyy väistää sekä staattisia esteitä että jahtaavia vihollisia
+- ✅ Lisää strategista pelaamista (liiku älykkäästi!)
 
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 1.1  
+**Versio:** 1.2  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
 
 ---
