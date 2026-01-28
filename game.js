@@ -4,7 +4,8 @@ import * as THREE from 'three';
 const gameState = {
     score: 0,
     gameOver: false,
-    speed: 0.1
+    speed: 0.1,
+    kills: 0
 };
 
 // Näppäimistön tila
@@ -13,8 +14,12 @@ const keys = {
     backward: false,
     left: false,
     right: false,
-    jump: false
+    jump: false,
+    shoot: false
 };
+
+// Ammukset
+const projectiles = [];
 
 // Scene, Camera, Renderer
 const scene = new THREE.Scene();
@@ -351,6 +356,39 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
+// Hiiren klikkaus - Ammu!
+document.addEventListener('mousedown', (e) => {
+    if (e.button === 0 && !gameState.gameOver) { // Vasen nappi
+        shoot();
+    }
+});
+
+// Ammunta
+function shoot() {
+    const projectileGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+    const projectileMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x00ffff,
+        emissive: 0x00ffff
+    });
+    const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
+    
+    // Ammus lähtee pelaajan edestä
+    projectile.position.copy(player.position);
+    projectile.position.y += 0.5; // Silmien korkeudelta
+    
+    // Suunta kamerasta eteenpäin
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    direction.y = 0; // Pidä vaakasuorassa
+    direction.normalize();
+    
+    projectile.velocity = direction.multiplyScalar(0.5);
+    projectile.life = 100; // frames
+    
+    scene.add(projectile);
+    projectiles.push(projectile);
+}
+
 // Törmäystarkistus
 function checkCollision(obj1, obj2) {
     const box1 = new THREE.Box3().setFromObject(obj1);
@@ -361,6 +399,54 @@ function checkCollision(obj1, obj2) {
 // Päivitä pisteet
 function updateScore() {
     document.getElementById('score').textContent = gameState.score;
+}
+
+// Räjähdysefekti vihollisille
+function createExplosion(position) {
+    const particleCount = 20;
+    const particles = [];
+    
+    for (let i = 0; i < particleCount; i++) {
+        const geometry = new THREE.SphereGeometry(0.08, 4, 4);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0xff00ff,
+            transparent: true,
+            opacity: 1
+        });
+        const particle = new THREE.Mesh(geometry, material);
+        particle.position.copy(position);
+        
+        // Satunnainen nopeus joka suuntaan
+        particle.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.3,
+            Math.random() * 0.4,
+            (Math.random() - 0.5) * 0.3
+        );
+        particle.life = 1.0;
+        
+        scene.add(particle);
+        particles.push(particle);
+    }
+    
+    // Päivitä partikkeleita
+    const updateParticles = () => {
+        particles.forEach((particle, index) => {
+            particle.position.add(particle.velocity);
+            particle.velocity.y -= 0.015; // Painovoima
+            particle.life -= 0.03;
+            particle.material.opacity = particle.life;
+            
+            if (particle.life <= 0) {
+                scene.remove(particle);
+                particles.splice(index, 1);
+            }
+        });
+        
+        if (particles.length > 0) {
+            requestAnimationFrame(updateParticles);
+        }
+    };
+    updateParticles();
 }
 
 // Partikkeliefekti kolikoille
@@ -481,7 +567,7 @@ function animate() {
     });
 
     // Päivitä viholliset
-    enemies.forEach((enemy) => {
+    enemies.forEach((enemy, enemyIndex) => {
         // Laske suunta pelaajaan
         const direction = new THREE.Vector3();
         direction.subVectors(player.position, enemy.position);
@@ -501,6 +587,49 @@ function animate() {
             alert('Vihollinen sai sinut kiinni! Pisteet: ' + gameState.score);
             location.reload();
         }
+    });
+
+    // Päivitä ammukset
+    projectiles.forEach((projectile, projIndex) => {
+        projectile.position.add(projectile.velocity);
+        projectile.life--;
+        
+        // Poista vanhat ammukset
+        if (projectile.life <= 0) {
+            scene.remove(projectile);
+            projectiles.splice(projIndex, 1);
+            return;
+        }
+        
+        // Tarkista törmäys vihollisiin
+        enemies.forEach((enemy, enemyIndex) => {
+            if (checkCollision(projectile, enemy)) {
+                // Luo räjähdysefekti
+                createExplosion(enemy.position.clone());
+                
+                // Poista vihollinen ja ammus
+                scene.remove(enemy);
+                enemies.splice(enemyIndex, 1);
+                scene.remove(projectile);
+                projectiles.splice(projIndex, 1);
+                
+                // Lisää pisteitä
+                gameState.score += 50;
+                gameState.kills++;
+                updateScore();
+                
+                // Luo uusi vihollinen
+                createEnemy();
+            }
+        });
+        
+        // Tarkista törmäys esteisiin (ammukset pomppii pois)
+        obstacles.forEach((obstacle) => {
+            if (checkCollision(projectile, obstacle)) {
+                scene.remove(projectile);
+                projectiles.splice(projIndex, 1);
+            }
+        });
     });
 
     // Kamera seuraa pelaajaa
