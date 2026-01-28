@@ -2052,8 +2052,85 @@ git commit -m "fix: korjattu 3D-mallien latauslogiikka ja vaihdettu paremmat mal
 
 ---
 
+### Vaihe 28: Gameplay-parannukset
+
+#### 🐛 Ongelmat #28
+> "Viholliset eivät näy ollenkaan. Hahmo ei käänny ja kävele sen mukaan mihin liikutan sitä. Siinä on yhä se vanha ase."
+
+#### 💡 Ratkaisut #28
+
+**Korjatut ongelmat:**
+
+**1. Viholliset eivät näy:**
+- **Syy:** `createEnemy()` kutsuttiin vasta mallin latauksen jälkeen
+- **Ratkaisu:** Luodaan viholliset heti fallback-geometrialla, malli korvaa kun latautuu
+```javascript
+// Luo viholliset heti
+for (let i = 0; i < 5; i++) {
+    createFallbackEnemy();
+}
+
+// Kun malli latautuu, korvaa geometria
+loader.load('models/drone.glb', (gltf) => {
+    enemies.forEach(enemy => {
+        while(enemy.children.length > 0) {
+            enemy.remove(enemy.children[0]);
+        }
+        const model = enemyModelTemplate.clone();
+        enemy.add(model);
+    });
+});
+```
+
+**2. Hahmo ei käänny liikkumissuuntaan:**
+- **Syy:** Puuttui rotation-logiikka
+- **Ratkaisu:** Lasketaan liikkumissuunta ja käännetään hahmo siihen
+```javascript
+let moveDirection = new THREE.Vector3(0, 0, 0);
+
+if (keys.forward) {
+    moveDirection.add(forward);
+}
+// ... muut suunnat
+
+if (isMoving && moveDirection.length() > 0) {
+    const targetAngle = Math.atan2(moveDirection.x, moveDirection.z);
+    player.rotation.y = targetAngle;
+}
+```
+
+**3. Vanha ase näkyy:**
+- **Syy:** `addWeaponToPlayer()` kutsuttiin kun malli latautui
+- **Ratkaisu:** Poistetaan vanha ase kun malli latautuu
+```javascript
+if (player.weapon) {
+    player.remove(player.weapon);
+    player.weapon = null;
+}
+```
+
+**Tekninen parannus:**
+- Viholliset näkyvät heti pelissä
+- Hahmo rotoi liikkumissuuntaan (kuten oikeissa peleissä)
+- Ei ylimääräisiä geometrioita mallin päällä
+
+**Git-commit:**
+```bash
+git add -A
+git commit -m "fix: korjattu viholliset näkymään, lisätty hahmon kääntyminen ja poistettu vanha ase"
+# Commit: 9209078
+```
+
+**Tulos:**
+- ✅ 5 vihollista näkyy heti (oktaedrit)
+- ✅ Hahmo kääntyy kulkusuuntaan liikkuessa
+- ✅ Vanha ase ei näy mallin päällä
+- ✅ Parempi pelikokemus
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.3  
+**Versio:** 3.4  
 **Seuraava päivitys:** Kun Quaternius-mallit integroitu
 
 ---
