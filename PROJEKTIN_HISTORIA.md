@@ -2129,9 +2129,83 @@ git commit -m "fix: korjattu viholliset näkymään, lisätty hahmon kääntymin
 
 ---
 
+### Vaihe 29: Animaatioiden ja Mallin Parannus
+
+#### 🐛 Ongelmat #29
+> "Vihollinen ei näy vieläkään. Ja hahmo kävelee silloinkin se on paikallaan. Eikä se hyppää vaan kävelee koko hypyn ajan. Kannattisiko etsiä parempi hahmo?"
+
+#### 💡 Ratkaisut #29
+
+**Korjatut ongelmat:**
+
+**1. Viholliset eivät näy:**
+- **Syy:** Liian pienet (0.5 oktaedri kaukana)
+- **Ratkaisu:** Kasvatettu 3x suuremmiksi (1.5 oktaedri)
+- Lisätty console.log debuggausta varten
+
+**2. Hahmo "kävelee" aina:**
+- **Syy:** Animaatio .play() kutsuttu heti ja jätetty päälle
+- **Ratkaisu:** Älykkäät animaatiovaihdot tilan mukaan
+```javascript
+// Tallenna kaikki animaatiot
+player.actions = {};
+gltf.animations.forEach((clip) => {
+    player.actions[clip.name] = playerMixer.clipAction(clip);
+});
+
+// Animaatiosilmukassa:
+if (!playerState.onGround) {
+    // Jump-animaatio
+} else if (isMoving) {
+    // Walk/Run-animaatio
+} else {
+    // Idle-animaatio
+}
+```
+
+**3. Parempi hahmo:**
+- **Vanha:** CesiumMan (ei hyviä animaatioita)
+- **Uusi:** **Soldier.glb** (Three.js virallinen esimerkki)
+  - 2.1 MB
+  - Sisältää: Idle, Walk, Run animaatiot
+  - Ammattimaisesti animoitu
+  - Toimii suoraan Three.js:n kanssa
+
+**Lähde:**
+```
+https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/Soldier.glb
+```
+
+**Tekninen toteutus:**
+- Animaatiot tallennetaan objektiin: `player.actions[name]`
+- Joka framella: pysäytä kaikki, valitse oikea, käynnistä
+- Ehdollinen valinta: `!onGround` → Jump, `isMoving` → Walk, muuten Idle
+
+**Git-commit:**
+```bash
+git add -A
+git commit -m "fix: korjattu animaatiot (idle/walk/jump vaihto), suuremmat viholliset, vaihdettu Soldier-malliin"
+# Commit: 83c6336
+```
+
+**Tulos:**
+- ✅ Viholliset näkyvät (3x suuremmat)
+- ✅ Idle-animaatio kun paikallaan
+- ✅ Walk-animaatio kun liikkuu
+- ✅ Jump-animaatio (jos malli sisältää)
+- ✅ Ammattimaisempi hahmo
+
+**Suositukset paremmille malleille:**
+1. **Mixamo** (mixamo.com) - Adobe, ilmainen, tuhansia animoituja hahmoja
+2. **Quaternius** (quaternius.com) - Low-poly, ilmainen
+3. **Sketchfab** (sketchfab.com) - Suodatin: Free, Downloadable, Rigged
+4. **Poly Pizza** (poly.pizza) - Google Poly arkisto
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.4  
-**Seuraava päivitys:** Kun Quaternius-mallit integroitu
+**Versio:** 3.5  
+**Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
 
 ---
 
