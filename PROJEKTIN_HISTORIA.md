@@ -2294,8 +2294,81 @@ git commit -m "feat: lisätty ampumisanimaation tuki (TPose/Shoot/Fire)"
 
 ---
 
+### Vaihe 31: Quaternius Astronaut -mallin Integrointi
+
+#### 📥 Muutos #31
+> "Pudotin sinne kansioon Astronauta tiedoston. Se on public domain, mutta tekijä voidaan mainita pelin lopussa: Astronaut by Quaternius"
+
+#### 💡 Toteutus #31
+
+**Uusi 3D-malli:** Astronaut by Quaternius
+
+**Lähde:**
+- **Tekijä:** Quaternius (quaternius.com)
+- **Lisenssi:** CC0 / Public Domain
+- **Koko:** 685 KB
+- **Credits:** "Astronaut by Quaternius" (vapaaehtoinen maininta)
+
+**Tehdyt muutokset:**
+
+**1. Mallin vaihto:**
+```javascript
+// ENNEN:
+loader.load('models/soldier.glb', (gltf) => {
+
+// JÄLKEEN:
+loader.load('models/astronaut.glb', (gltf) => {
+```
+
+**2. Credits-osio lisätty:**
+```html
+<div id="credits">
+    <p>3D Model: Astronaut by Quaternius</p>
+</div>
+```
+
+**3. CSS-tyylittely:**
+```css
+#credits {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    text-align: right;
+}
+```
+
+**Astronaut-mallin edut:**
+- ✅ Quaterniuksen laadukas low-poly tyyli
+- ✅ Sopii sci-fi teemaan täydellisesti
+- ✅ Public Domain - ei lisenssirajoituksia
+- ✅ Sisältää animaatiot (jos mukana)
+- ✅ Optimoitu peleihin
+
+**Git-commit:**
+```bash
+git add -A
+git commit -m "feat: vaihdettu pelaajamalli Quaternius Astronautiksi + credits"
+# Commit: 3dc305f
+```
+
+**Tulos:**
+- ✅ Astronautti näkyy pelaajana
+- ✅ Credits näkyvät oikeassa alakulmassa
+- ✅ Lisenssi kunnossa (CC0 + vapaaehtoinen maininta)
+- ✅ Ammattimaisempi sci-fi-ilme
+
+**Quaternius-mallit:**
+- Korkealaatuisia low-poly malleja
+- Ilmaisia (CC0)
+- Kategoriat: Characters, Animals, Buildings, Nature
+- Suosittu indie-pelikehityksessä
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.6  
+**Versio:** 3.7  
 **Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
 
 ---
