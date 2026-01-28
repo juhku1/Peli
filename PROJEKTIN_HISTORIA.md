@@ -2367,8 +2367,83 @@ git commit -m "feat: vaihdettu pelaajamalli Quaternius Astronautiksi + credits"
 
 ---
 
+### Vaihe 32: Kriittiset Bugit Korjattu
+
+#### 🐛 Ongelma #32
+> "Tuo löytyi selaimen kosolista" (käyttäjä liitti massiivisen virhelokin)
+
+**Virheet:**
+1. `game.js:907 Uncaught TypeError: currentAction.isRunning is not a function`
+2. `game.js:628 Uncaught TypeError: Cannot read properties of undefined (reading 'localToWorld')`
+
+**Diagnoosi:**
+- Astronaut-malli ladattiin, mutta `player.weapon` asetettiin `null`
+- Ammumiskoodi yritti kutsua `player.weapon.localToWorld()` → virhe
+- Animaatiokoodi yritti kutsua `currentAction.isRunning()` kun `currentAction` oli `undefined`
+- Molemmat virheet toistuivat infinite loop:ssa → peli kaatui
+
+#### 💡 Korjaus #32
+
+**1. Ase lisätty astronautille:**
+```javascript
+// Luo ase astronautille
+const weaponGroup = new THREE.Group();
+const weaponBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.1, 0.8),
+    new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 })
+);
+weaponBody.position.z = -0.4;
+weaponGroup.add(weaponBody);
+
+const weaponBarrel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8),
+    new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.9 })
+);
+weaponBarrel.position.z = -0.75;
+weaponBarrel.rotation.x = Math.PI / 2;
+weaponGroup.add(weaponBarrel);
+
+weaponGroup.position.set(0.3, 0.5, 0);
+weaponGroup.rotation.y = -Math.PI / 2;
+player.add(weaponGroup);
+player.weapon = weaponGroup;
+```
+
+**2. Animaatiovirhe korjattu:**
+```javascript
+// ENNEN:
+if (currentAction && !currentAction.isRunning()) {
+
+// JÄLKEEN:
+if (currentAction && typeof currentAction.isRunning === 'function') {
+    if (!currentAction.isRunning()) {
+```
+
+**3. Ammuntavirhe korjattu:**
+```javascript
+// ENNEN:
+player.weapon.localToWorld(barrelTip);
+
+// JÄLKEEN:
+if (player.weapon) {
+    player.weapon.localToWorld(barrelTip);
+} else {
+    barrelTip.copy(player.position);
+    barrelTip.y += 0.5;
+}
+```
+
+**Tulos:**
+- ✅ Infinite loop korjattu
+- ✅ Peli pelattavissa taas
+- ✅ Astronautilla on nyt ase
+- ✅ Ammunta toimii oikein
+- ✅ Animaatiot toimivat ilman virheitä
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.7  
+**Versio:** 3.8  
 **Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
 
 ---

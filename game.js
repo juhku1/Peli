@@ -126,6 +126,28 @@ loader.load('models/astronaut.glb', (gltf) => {
         player.weapon = null;
     }
     
+    // Luo ase astronautille
+    const weaponGroup = new THREE.Group();
+    const weaponBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.1, 0.8),
+        new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 })
+    );
+    weaponBody.position.z = -0.4;
+    weaponGroup.add(weaponBody);
+    
+    const weaponBarrel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8),
+        new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.9 })
+    );
+    weaponBarrel.position.z = -0.75;
+    weaponBarrel.rotation.x = Math.PI / 2;
+    weaponGroup.add(weaponBarrel);
+    
+    weaponGroup.position.set(0.3, 0.5, 0);
+    weaponGroup.rotation.y = -Math.PI / 2;
+    player.add(weaponGroup);
+    player.weapon = weaponGroup;
+    
     playerLoaded = true;
     console.log('✅ Robotti-malli ladattu!', gltf.animations.length, 'animaatiota');
 }, undefined, (error) => {
@@ -625,7 +647,13 @@ function shoot() {
     // 2. ASEEN PIIPUN SIJAINTI maailmankoordinaateissa
     // Lasketaan piipun pää oikein aseen transformaation kautta
     const barrelTip = new THREE.Vector3(0, 0, -0.9);
-    player.weapon.localToWorld(barrelTip);
+    if (player.weapon) {
+        player.weapon.localToWorld(barrelTip);
+    } else {
+        // Jos asetta ei ole, käytä pelaajan sijaintia
+        barrelTip.copy(player.position);
+        barrelTip.y += 0.5;
+    }
     
     // Ammus lähtee piipun päästä
     projectile.position.copy(barrelTip);
@@ -904,8 +932,11 @@ function animate() {
                 currentAction = player.actions['Idle'] || player.actions['idle'] || actionNames[0];
             }
             
-            if (currentAction && !currentAction.isRunning()) {
-                currentAction.reset().play();
+            // Tarkista että currentAction on olemassa ja sillä on isRunning-metodi
+            if (currentAction && typeof currentAction.isRunning === 'function') {
+                if (!currentAction.isRunning()) {
+                    currentAction.reset().play();
+                }
             }
         }
     }
