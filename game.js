@@ -5,7 +5,12 @@ const gameState = {
     score: 0,
     gameOver: false,
     speed: 0.1,
-    kills: 0
+    kills: 0,
+    ammo: 30,
+    maxAmmo: 30,
+    reloading: false,
+    canShoot: true,
+    shootCooldown: 0
 };
 
 // Näppäimistön tila
@@ -329,6 +334,9 @@ document.addEventListener('keydown', (e) => {
                 keys.jump = true;
             }
             break;
+        case 'KeyR':
+            reload();
+            break;
     }
 });
 
@@ -365,6 +373,14 @@ document.addEventListener('mousedown', (e) => {
 
 // Ammunta
 function shoot() {
+    // Tarkista voiko ampua
+    if (!gameState.canShoot || gameState.reloading || gameState.ammo <= 0) {
+        if (gameState.ammo <= 0 && !gameState.reloading) {
+            reload();
+        }
+        return;
+    }
+    
     const projectileGeometry = new THREE.SphereGeometry(0.15, 8, 8);
     const projectileMaterial = new THREE.MeshBasicMaterial({ 
         color: 0x00ffff,
@@ -376,17 +392,65 @@ function shoot() {
     projectile.position.copy(player.position);
     projectile.position.y += 0.5; // Silmien korkeudelta
     
-    // Suunta kamerasta eteenpäin
-    const direction = new THREE.Vector3();
-    camera.getWorldDirection(direction);
-    direction.y = 0; // Pidä vaakasuorassa
-    direction.normalize();
+    // Suunta: kameran offset -suunta (pelaaja katsoo -Z suuntaan kameran näkökulmasta)
+    const cameraOffset = new THREE.Vector3(0, 5, 10);
+    const direction = new THREE.Vector3(0, 0, -1);
+    
+    // Käännä suunta kameran mukaan (XZ-tasossa)
+    const angle = Math.atan2(cameraOffset.x, cameraOffset.z);
+    direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
+    
+    // Laske pelaajan liikkumissuunta näppäimistä
+    const moveDir = new THREE.Vector3(0, 0, 0);
+    if (keys.forward) moveDir.z -= 1;
+    if (keys.backward) moveDir.z += 1;
+    if (keys.left) moveDir.x -= 1;
+    if (keys.right) moveDir.x += 1;
+    
+    // Jos pelaaja liikkuu, ammu liikkumissuuntaan
+    if (moveDir.length() > 0) {
+        moveDir.normalize();
+        direction.copy(moveDir);
+    }
     
     projectile.velocity = direction.multiplyScalar(0.5);
     projectile.life = 100; // frames
     
     scene.add(projectile);
     projectiles.push(projectile);
+    
+    // Vähennä ammuksia
+    gameState.ammo--;
+    updateAmmo();
+    
+    // Cooldown seuraavaan ampumiseen
+    gameState.canShoot = false;
+    gameState.shootCooldown = 5; // 5 framea
+}
+
+// Lataa ammukset
+function reload() {
+    if (gameState.reloading) return;
+    
+    gameState.reloading = true;
+    
+    setTimeout(() => {
+        gameState.ammo = gameState.maxAmmo;
+        gameState.reloading = false;
+        updateAmmo();
+    }, 1500); // 1.5 sekuntia
+}
+
+// Päivitä ammusnäyttö
+function updateAmmo() {
+    const ammoElement = document.getElementById('ammo');
+    if (ammoElement) {
+        if (gameState.reloading) {
+            ammoElement.textContent = 'Ladataan...';
+        } else {
+            ammoElement.textContent = gameState.ammo + '/' + gameState.maxAmmo;
+        }
+    }
 }
 
 // Törmäystarkistus
@@ -509,6 +573,14 @@ function animate() {
     requestAnimationFrame(animate);
 
     if (gameState.gameOver) return;
+    
+    // Päivitä shoot cooldown
+    if (gameState.shootCooldown > 0) {
+        gameState.shootCooldown--;
+        if (gameState.shootCooldown === 0) {
+            gameState.canShoot = true;
+        }
+    }
 
     // Liikkuminen
     if (keys.forward) player.position.z -= playerState.moveSpeed;
