@@ -717,6 +717,36 @@ Varjot: Vastaanottaa varjoja
 
 ---
 
+---
+
+### Vaihe 3: Palvelimen Käynnistys
+
+#### ❓ Kysymys #3
+> "käynnistä paikallinen palvelin."
+
+#### 💡 Vastaus #3
+**Toimenpide:** Paikallisen HTTP-palvelimen käynnistys
+
+**Käytetty komento:**
+```bash
+python3 -m http.server 8000
+```
+
+**Perustelu:**
+- Three.js module imports vaativat HTTP-palvelimen (ei toimi file://-protokollalla)
+- Python3:n sisäänrakennettu HTTP-palvelin on yksinkertainen ja nopea ratkaisu
+- Portti 8000 on standardiportti kehityskäyttöön
+
+**Tulos:**
+- ✅ Palvelin käynnissä portissa 8000
+- ✅ Peli saavutettavissa: http://localhost:8000
+- ✅ Toimii taustaprosessina
+
+**Testaus:**
+Avaa selaimessa: http://localhost:8000
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
 **Versio:** 1.0  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
