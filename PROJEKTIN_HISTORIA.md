@@ -1979,12 +1979,81 @@ if (playerMixer) {
 ```bash
 git add .
 git commit -m "feat: lisätty GLTFLoader ja 3D-mallit (robot + drone)"
+# Commit: 9158a1a
 ```
 
 ---
 
+### Vaihe 27: 3D-Mallien Latausbugin Korjaus
+
+#### 🐛 Ongelma #27
+> "Se pelihahmo on pelkkä kapseli. vastustajat ovat aivan samanlaisia kuin ennen."
+
+#### 💡 Ratkaisu #27
+
+**Havaittu ongelma:**
+- Pelaaja näkyi kapseli-geometriana (fallback)
+- Viholliset olivat vanhaa geometriaa (oktaedrit + renkaat)
+- 3D-mallit eivät latautuneet oikein
+
+**Juurisyy:**
+1. `createFallbackPlayer()` kutsuttiin heti alussa
+2. Viholliset eivät koskaan luotu (odottivat mallin latausta)
+3. Duck.glb käytössä molemmille (väärät mallit)
+
+**Korjaukset:**
+
+**1. Pelaajan lataus:**
+```javascript
+// ENNEN: Fallback kutsuttu heti
+createFallbackPlayer();
+
+// JÄLKEEN: Tyhjä Group, malli ladataan asynkronisesti
+player.position.set(0, 0, 0);
+scene.add(player);
+
+loader.load('models/robot.glb', (gltf) => {
+    // Poista placeholder jos on
+    if (player.children.length > 0) {
+        player.children.forEach(child => player.remove(child));
+    }
+    playerModel = gltf.scene;
+    player.add(playerModel);
+    // ...
+});
+```
+
+**2. Uudet mallit:**
+- `robot.glb`: CesiumMan (479 KB) - animoitu ihmishahmo
+- `drone.glb`: BrainStem (3.1 MB) - sci-fi objekti
+
+**3. Console-logit:**
+- ✅ "Robotti-malli ladattu!" kun onnistuu
+- ⚠️ "Käytetään fallback-geometriaa" jos epäonnistuu
+- ❌ Virhelokit jos lataus failaa
+
+**Tekninen parannus:**
+- Poistettu turha `scene.remove(player)` ja uudelleenluonti
+- Käytetään samaa player-Grouppia läpi elinkaaren
+- Malli lisätään/poistetaan dynaamisesti
+
+**Git-commit:**
+```bash
+git add -A
+git commit -m "fix: korjattu 3D-mallien latauslogiikka ja vaihdettu paremmat mallit"
+# Commit: fdcbaa4
+```
+
+**Tulos:**
+- ✅ Pelaaja näkyy CesiumMan-hahmona
+- ✅ Viholliset näkyvät BrainStem-objekteina
+- ✅ Animaatiot toimivat (jos malli sisältää)
+- ✅ Fallback toimii jos lataus epäonnistuu
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.2  
+**Versio:** 3.3  
 **Seuraava päivitys:** Kun Quaternius-mallit integroitu
 
 ---
