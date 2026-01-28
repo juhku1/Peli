@@ -435,29 +435,23 @@ function shoot() {
     });
     const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
     
-    // Ammus lähtee pelaajan edestä (hiukan oikealta)
-    const spawnOffset = new THREE.Vector3(
-        Math.sin(mouse.yaw) * -2 + 0.5, // Eteen ja oikealle
-        0.5, // Silmien korkeudelta
-        Math.cos(mouse.yaw) * -2
-    );
-    projectile.position.copy(player.position).add(spawnOffset);
+    // MODERNI TAPA: Ammus lähtee kameran sijainnista
+    // Tämä varmistaa että se menee täsmälleen crosshairiin
+    projectile.position.copy(camera.position);
     
-    // Suunta: täsmälleen sinne minne hiiri osoittaa
-    const direction = new THREE.Vector3(
-        -Math.sin(mouse.yaw),
-        -mouse.pitch, // Pystykierto mukaan
-        -Math.cos(mouse.yaw)
-    );
+    // Suunta: Raycasting kameran keskeltä eteenpäin
+    // Näin ammus menee TÄSMÄLLEEN sinne minne kamera katsoo
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
     direction.normalize();
     
-    projectile.velocity = direction.multiplyScalar(0.8); // Nopeampi ammus
+    projectile.velocity = direction.multiplyScalar(1.0); // Nopeus
     projectile.life = 150; // Pidempi elinikä
     
     scene.add(projectile);
     projectiles.push(projectile);
     
-    // Muzzle flash - lyhyt välähdys ammuttaessa
+    // Muzzle flash - näytetään pelaajan edessä (visuaalinen efekti)
     const flashGeometry = new THREE.SphereGeometry(0.3, 8, 8);
     const flashMaterial = new THREE.MeshBasicMaterial({ 
         color: 0xffff00,
@@ -465,7 +459,10 @@ function shoot() {
         opacity: 1
     });
     const flash = new THREE.Mesh(flashGeometry, flashMaterial);
-    flash.position.copy(projectile.position);
+    // Flash näytetään pelaajan edessä, vaikka ammus lähteekin kamerasta
+    flash.position.copy(player.position);
+    flash.position.y += 1;
+    flash.position.add(direction.clone().multiplyScalar(1));
     scene.add(flash);
     
     // Poista flash nopeasti

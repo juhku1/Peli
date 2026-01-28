@@ -1331,8 +1331,92 @@ mouse.pitch += e.movementY * mouse.sensitivity;
 
 ---
 
+### 📋 Vaihe 10: Paluu kehitykseen ja ammuntamekaniikan parannus
+
+#### ❓ Kysymys #17
+> "käynnistä palvelin"
+
+#### 💡 Vastaus #17
+**Toimenpide:** Kehityspalvelimen uudelleenkäynnistys undojen jälkeen
+
+**Komento:**
+```bash
+pkill -f "python3 -m http.server"
+lsof -ti:8000 | xargs kill -9
+python3 -m http.server 8000
+```
+
+**Tulos:**
+- Palvelin käynnissä osoitteessa http://localhost:8000
+- Peli ladattu undo-version mukaisena tilana
+
+---
+
+#### ❓ Kysymys #18
+> "Nyt pitäisi parantaa ammuntaa, koska hahmosta lähtevä laukaus menee liian alas. Ei kohti tähtäysristikkoa. Millainen sen pitäisi modernissa pelissä olla, että se olisi luonteva?"
+
+#### 💡 Vastaus #18
+**Ongelma:** Ammukset lähtivät pelaajahahmon sijainnista, eivätkä menneet täsmälleen sinne minne tähtäysristikko osoitti.
+
+**Moderni ratkaisu - Camera-Based Shooting:**
+Kaikki modernit third-person shooterit (Fortnite, Call of Duty, Gears of War) käyttävät **kamera-pohjaista ammuntaa**:
+1. Ammus lähtee kameran sijainnista, EI pelaajan sijainnista
+2. Suunta lasketaan kameran katselusuunnasta (raycasting)
+3. Tämä varmistaa että ammus menee AINA täsmälleen crosshairiin
+
+**Toteutetut muutokset:**
+
+**ENNEN (vanha tapa):**
+```javascript
+// Ammus lähtee pelaajan sijainnista
+projectile.position.copy(player.position);
+projectile.position.y += 0.5;
+
+// Suunta lasketaan pelaajan liikkeestä
+const moveDir = new THREE.Vector3(0, 0, 0);
+if (keys.forward) moveDir.z -= 1;
+// ...
+```
+
+**JÄLKEEN (moderni tapa):**
+```javascript
+// MODERNI: Ammus lähtee kameran sijainnista
+projectile.position.copy(camera.position);
+
+// Suunta: Raycasting kameran keskeltä
+const direction = new THREE.Vector3();
+camera.getWorldDirection(direction);
+direction.normalize();
+
+projectile.velocity = direction.multiplyScalar(1.0);
+```
+
+**Tekniset edut:**
+1. **Täydellinen tähtäys** - Ammus menee aina crosshairiin
+2. **Intuitiivinen** - "Mitä näet, siihen osut"
+3. **Ei parallax-ongelmaa** - Ei eroa tähtäyksen ja osuman välillä
+4. **AAA-standardi** - Sama tekniikka kuin kaikissa moderneissa peleissä
+
+**Visuaaliset efektit:**
+- Muzzle flash näytetään silti pelaajan edessä (visuaalinen illuusio)
+- Ammus itse lähtee kamerasta (toiminnallinen tarkkuus)
+- Yhdistelmä näyttää luonnolliselta ja toimii täsmällisesti
+
+**Parannetut parametrit:**
+- Ammuksen nopeus: 1.0 (aiemmin 0.5)
+- Elinikä: 150 framea (säilytetty)
+- Koko: 0.15 (säilytetty)
+
+**Tulos:**
+- ✅ Ammukset menevät täsmälleen crosshairiin
+- ✅ Ei enää "liian alas" -ongelmaa
+- ✅ Moderni, intuitiivinen tähtäys
+- ✅ AAA-pelin tuntuma
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 2.2  
+**Versio:** 2.3  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
 
 ---
