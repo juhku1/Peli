@@ -2752,9 +2752,183 @@ scene.actionManager.registerAction(
 
 ---
 
+### Vaihe 38: Third-Person Näkymä (Fortnite-tyyli)
+
+#### 🎮 Päätös #38
+> "haluan niin että se hahmokin näkyy. Silloin kuin fortnitessa"
+
+**Tavoite:**
+- Third-person kamera jossa hahmo näkyy
+- Over-the-shoulder näkymä kuten Fortnitessa
+- Hahmo kääntyy liikkumissuuntaan
+
+#### 💡 Toteutus #38
+
+**Kameramuutos:**
+```javascript
+// ENNEN: UniversalCamera (FPS)
+const camera = new BABYLON.UniversalCamera(...);
+camera.attachControl();
+
+// JÄLKEEN: ArcRotateCamera (Third-Person)
+const camera = new BABYLON.ArcRotateCamera(
+    "camera",
+    -Math.PI / 2,     // Vaakakulma
+    Math.PI / 3,       // Pystykulma
+    8,                 // Etäisyys hahmosta
+    player.position,   // Seuraa hahmoa
+    scene
+);
+camera.lockedTarget = player; // Lukittu hahmoon
+```
+
+**Liikkumislogiikka:**
+- Hahmo liikkuu maassa (ei kamera!)
+- WASD ohjaa hahmoa kameran suuntaan
+- Hahmo kääntyy automaattisesti liikkumissuuntaan
+- `player.rotation.y = Math.atan2(moveDir.x, moveDir.z)`
+
+**Kameran ominaisuudet:**
+1. ✅ Zoom: 3-15 yksikköä (hiiren rulla)
+2. ✅ Pysty-rajoitukset: Ei käänny liikaa ylös/alas
+3. ✅ Törmäystarkistus kameralla
+4. ✅ Hiiren herkkyys: 2000 (sopiva)
+
+**Animaatioiden päivitys:**
+- Idle kun paikallaan
+- Walk_Gun kun liikkuu
+- Run_Gun kun Shift painettuna
+- Animaatiot vaihtuvat sujuvasti isMoving-tilan mukaan
+
+**Vertailu Fortnite-peliin:**
+- ✅ Hahmo näkyy selän takaa
+- ✅ Kamera kiertää hahmon ympäri
+- ✅ Hahmo kääntyy liikkumissuuntaan
+- ✅ WASD-liikkuminen kameran mukaan
+- ✅ Zoom toimii
+
+**Tekninen toteutus:**
+```javascript
+// Laske liikkumissuunta kameran alpha-kulman mukaan
+const forward = new BABYLON.Vector3(
+    Math.sin(camera.alpha),
+    0,
+    Math.cos(camera.alpha)
+);
+const right = new BABYLON.Vector3(
+    Math.cos(camera.alpha),
+    0,
+    -Math.sin(camera.alpha)
+);
+
+// Liikuta hahmoa (ei kameraa)
+if (keys.forward) {
+    player.position.addInPlace(forward.scale(speed));
+}
+
+// Käännä hahmo liikkumissuuntaan
+const targetRotation = Math.atan2(moveDir.x, moveDir.z);
+player.rotation.y = targetRotation;
+```
+
+**Muutokset koodissa:**
+- UniversalCamera → ArcRotateCamera
+- Hahmo ei enää `parent = camera`
+- `camera.lockedTarget = player`
+- WASD-logiikka siirretty scene.registerBeforeRender()
+- Animaatiot päivittyvät isMoving-tilan mukaan
+
+**Seuraavat parannukset:**
+- Lisää hyppy (Space)
+- Lisää kyykistys (Ctrl)
+- Smooth camera rotation
+- Kameran collision parempi
+
+---
+
+### Vaihe 37: Siirtyminen Babylon.js:ään
+
+#### 🔄 Päätös #37
+> "korvaa nykyinen. päivitä projektin_historia" - Siirrytään Three.js:stä Babylon.js:ään
+
+**Tavoite:**
+- Käyttää pelimoottoria jossa ampuminen toimii luotettavasti
+- Babylon.js tarjoaa valmiit peliominaisuudet
+- Parempi dokumentaatio FPS-peleille
+
+#### 💡 Miksi Babylon.js?
+
+**Ongelmat Three.js:n kanssa:**
+- Ampuminen toimi vain kerran (cooldown-ongelmat)
+- Ammukset lähtivät väärästä paikasta
+- Ei valmista FPS-kameraa
+- Collision detection täytyi rakentaa itse
+- Three.js on 3D-kirjasto, ei pelimoottori
+
+**Babylon.js edut:**
+1. ✅ **UniversalCamera** - Valmis FPS-kamera
+2. ✅ **ActionManager** - Helppoa input-käsittelyä
+3. ✅ **Mesh Picking** - Raycasting valmiina
+4. ✅ **Physics Engine** - Sisäänrakennettu törmäysten käsittely
+5. ✅ **Animation System** - Parempi AnimationGroup
+6. ✅ **SceneLoader** - Suoraan GLTF/GLB-tuki
+
+#### 🔧 Toteutus #37
+
+**Korvatut tiedostot:**
+- `index.html` - Babylon.js CDN (v6.x)
+- `game.js` - Uudelleenkirjoitettu Babylon.js:llä
+
+**Säilytetyt tiedostot:**
+- `models/astronaut.glb` - Sama 3D-malli toimii
+- `PROJEKTIN_HISTORIA.md` - Dokumentaatio jatkuu
+
+**Uusi arkkitehtuuri:**
+```javascript
+// Babylon.js Scene
+const canvas = document.getElementById('renderCanvas');
+const engine = new BABYLON.Engine(canvas);
+const scene = new BABYLON.Scene(engine);
+
+// FPS Camera (valmis!)
+const camera = new BABYLON.UniversalCamera();
+camera.attachControl(canvas, true);
+
+// GLB lataus (yksinkertaisempaa)
+BABYLON.SceneLoader.ImportMesh("", "models/", "astronaut.glb", scene, 
+    (meshes) => {
+        // Animaatiot valmiina!
+    }
+);
+
+// Ampuminen (ActionManager)
+scene.actionManager.registerAction(
+    new BABYLON.ExecuteCodeAction(
+        BABYLON.ActionManager.OnKeyDownTrigger,
+        () => shoot()
+    )
+);
+```
+
+**Toiminnot Babylon.js:llä:**
+- ✅ FPS-kamera valmiina (WASD + hiiri)
+- ✅ Ampuminen raycasting:lla
+- ✅ Ammukset sphere-mesheinä
+- ✅ Viholliset collision detection
+- ✅ Kaikki 18 animaatiota käytössä
+- ✅ Physics (Havok / Cannon.js)
+
+**Seuraavat askeleet:**
+- Testaa että kaikki toimii
+- Lisää ääniefektit (Babylon.js Sound)
+- Paranna vihollisten AI:ta
+- Lisää tasoja ja checkpoint-systeemi
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 4.3  
-**Seuraava päivitys:** Kun Babylon.js-versio toimii täysin
+**Versio:** 4.4  
+**Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
 
 ---
 

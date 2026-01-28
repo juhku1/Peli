@@ -33,23 +33,41 @@ const createScene = () => {
     ground.material = groundMat;
     ground.checkCollisions = true;
     
-    // FPS Kamera (Babylon.js valmis!)
-    const camera = new BABYLON.UniversalCamera("camera", new BABYLON.Vector3(0, 1.7, -5), scene);
-    camera.setTarget(BABYLON.Vector3.Zero());
+    // Third-Person Kamera (kuten Fortnite!)
+    const camera = new BABYLON.ArcRotateCamera(
+        "camera", 
+        -Math.PI / 2, // Alpha (vaakakulma)
+        Math.PI / 3,  // Beta (pystykulma) 
+        8,            // Etäisyys hahmosta
+        new BABYLON.Vector3(0, 1.5, 0), 
+        scene
+    );
     camera.attachControl(canvas, true);
     
-    // Kameran asetukset
-    camera.speed = 0.5;
-    camera.angularSensibility = 2000;
-    camera.ellipsoid = new BABYLON.Vector3(0.5, 1, 0.5); // Collision capsule
-    camera.checkCollisions = true;
-    camera.applyGravity = true;
+    // Kameran rajoitukset
+    camera.lowerRadiusLimit = 3;  // Lähin zoom
+    camera.upperRadiusLimit = 15; // Kaukaisin zoom
+    camera.lowerBetaLimit = 0.1;  // Ei käänny liikaa ylös
+    camera.upperBetaLimit = Math.PI / 2.2; // Ei käänny liikaa alas
     
-    // WASD-liikkuminen
-    camera.keysUp = [87]; // W
-    camera.keysDown = [83]; // S
-    camera.keysLeft = [65]; // A
-    camera.keysRight = [68]; // D
+    // Törmäykset
+    camera.checkCollisions = true;
+    camera.collisionRadius = new BABYLON.Vector3(0.5, 0.5, 0.5);
+    
+    // Hiiren herkkyys
+    camera.angularSensibilityX = 2000;
+    camera.angularSensibilityY = 2000;
+    
+    // Pelaajan placeholder (ennen kuin malli latautuu)
+    let player = BABYLON.MeshBuilder.CreateCapsule("playerTemp", {height: 2, radius: 0.5}, scene);
+    player.position.y = 1;
+    player.isVisible = false; // Piilotetaan kun malli latautuu
+    
+    const playerState = {
+        moveSpeed: 0.15,
+        runSpeed: 0.3,
+        rotation: 0
+    };
     
     // Pointer Lock
     scene.onPointerDown = (evt) => {
@@ -59,21 +77,30 @@ const createScene = () => {
         }
     };
     
-    // Näppäimistö
+    // Näppäimistö (liikuttaa hahmoa, ei kameraa)
+    const keys = {
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        run: false
+    };
+    
     scene.onKeyboardObservable.add((kbInfo) => {
-        if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN) {
-            if (kbInfo.event.key === 'r' || kbInfo.event.key === 'R') {
-                reload();
-            }
-            // Shift = juoksu
-            if (kbInfo.event.key === 'Shift') {
-                camera.speed = 1.0;
-            }
-        }
-        if (kbInfo.type === BABYLON.KeyboardEventTypes.KEYUP) {
-            if (kbInfo.event.key === 'Shift') {
-                camera.speed = 0.5;
-            }
+        const down = kbInfo.type === BABYLON.KeyboardEventTypes.KEYDOWN;
+        
+        switch(kbInfo.event.code) {
+            case 'KeyW': keys.forward = down; break;
+            case 'KeyS': keys.backward = down; break;
+            case 'KeyA': keys.left = down; break;
+            case 'KeyD': keys.right = down; break;
+            case 'ShiftLeft': 
+            case 'ShiftRight': 
+                keys.run = down;
+                break;
+            case 'KeyR':
+                if (down) reload();
+                break;
         }
     });
     
@@ -83,14 +110,21 @@ const createScene = () => {
         console.log("Meshit:", meshes.length);
         console.log("Animaatiot:", animationGroups.length, animationGroups.map(ag => ag.name));
         
-        // Päämesha
-        const astronaut = meshes[0];
-        astronaut.position = new BABYLON.Vector3(0, 0, 0);
-        astronaut.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
+        // Piilotetaan placeholder
+        player.dispose();
         
-        // Liitä kameraan (first person)
-        astronaut.parent = camera;
-        astronaut.position = new BABYLON.Vector3(0, -1.5, 0.5);
+        // Päämesha
+        player = meshes[0];
+        player.position = new BABYLON.Vector3(0, 0, 0);
+        player.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
+        
+        // EI liitetä kameraan - hahmo seisoo maassa!
+        // Kamera seuraa hahmoa
+        camera.lockedTarget = player;
+        
+        // Tallenna animaatiot
+        scene.animations = animationGroups;
+        scene.currentAnimation = null;
         
         // Käynnistä Idle-animaatio
         if (animationGroups.length > 0) {
@@ -98,6 +132,7 @@ const createScene = () => {
                           || animationGroups.find(ag => ag.name.includes('Idle'))
                           || animationGroups[0];
             idleAnim.start(true);
+            scene.currentAnimation = idleAnim;
         }
         
         // Piilota latausruutu
@@ -112,6 +147,77 @@ const createScene = () => {
     
     // Päivityssilmukka
     scene.registerBeforeRender(() => {
+        // Liikuta hahmoa WASD-näppäimillä
+        if (player && player.position) {
+            const speed = keys.run ? playerState.runSpeed : playerState.moveSpeed;
+            let isMoving = false;
+            
+            // Laske liikkumissuunta kameran mukaan
+            const forward = new BABYLON.Vector3(
+                Math.sin(camera.alpha),
+                0,
+                Math.cos(camera.alpha)
+            );
+            const right = new BABYLON.Vector3(
+                Math.cos(camera.alpha),
+                0,
+                -Math.sin(camera.alpha)
+            );
+            
+            if (keys.forward) {
+                player.position.addInPlace(forward.scale(speed));
+                isMoving = true;
+            }
+            if (keys.backward) {
+                player.position.addInPlace(forward.scale(-speed));
+                isMoving = true;
+            }
+            if (keys.left) {
+                player.position.addInPlace(right.scale(-speed));
+                isMoving = true;
+            }
+            if (keys.right) {
+                player.position.addInPlace(right.scale(speed));
+                isMoving = true;
+            }
+            
+            // Käännä hahmo liikkumissuuntaan
+            if (isMoving) {
+                const moveDir = new BABYLON.Vector3(0, 0, 0);
+                if (keys.forward) moveDir.addInPlace(forward);
+                if (keys.backward) moveDir.addInPlace(forward.scale(-1));
+                if (keys.left) moveDir.addInPlace(right.scale(-1));
+                if (keys.right) moveDir.addInPlace(right);
+                
+                if (moveDir.length() > 0) {
+                    const targetRotation = Math.atan2(moveDir.x, moveDir.z);
+                    player.rotation.y = targetRotation;
+                }
+            }
+            
+            // Animaatiot
+            if (scene.animations && scene.animations.length > 0) {
+                let targetAnim = null;
+                
+                if (isMoving && keys.run) {
+                    targetAnim = scene.animations.find(ag => ag.name.includes('Run_Gun')) 
+                              || scene.animations.find(ag => ag.name.includes('Run'));
+                } else if (isMoving) {
+                    targetAnim = scene.animations.find(ag => ag.name.includes('Walk_Gun')) 
+                              || scene.animations.find(ag => ag.name.includes('Walk'));
+                } else {
+                    targetAnim = scene.animations.find(ag => ag.name.includes('Idle_Gun')) 
+                              || scene.animations.find(ag => ag.name.includes('Idle'));
+                }
+                
+                if (targetAnim && targetAnim !== scene.currentAnimation) {
+                    if (scene.currentAnimation) scene.currentAnimation.stop();
+                    targetAnim.start(true);
+                    scene.currentAnimation = targetAnim;
+                }
+            }
+        }
+        
         // Päivitä cooldown
         if (gameState.shootCooldown > 0) {
             gameState.shootCooldown--;
