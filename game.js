@@ -85,7 +85,7 @@ let playerMixer = null;
 let playerLoaded = false;
 
 // Lataa robotti-malli
-loader.load('models/robot.glb', (gltf) => {
+loader.load('models/soldier.glb', (gltf) => {
     // Poista placeholder jos on
     if (player.children.length > 0) {
         player.children.forEach(child => player.remove(child));
@@ -104,11 +104,18 @@ loader.load('models/robot.glb', (gltf) => {
     
     player.add(playerModel);
     
-    // Animaatiot
+    // Animaatiot - tallenna kaikki, mutta älä toista vielä
     if (gltf.animations && gltf.animations.length > 0) {
         playerMixer = new THREE.AnimationMixer(playerModel);
-        const action = playerMixer.clipAction(gltf.animations[0]);
-        action.play();
+        player.animations = gltf.animations;
+        player.actions = {};
+        
+        // Luo action jokaiselle animaatiolle
+        gltf.animations.forEach((clip) => {
+            player.actions[clip.name] = playerMixer.clipAction(clip);
+        });
+        
+        console.log('✅ Animaatiot:', Object.keys(player.actions));
     }
     
     // Poista vanha ase jos on
@@ -414,8 +421,8 @@ loader.load('models/drone.glb', (gltf) => {
 function createFallbackEnemy() {
     const enemy = new THREE.Group();
     
-    // Päärunko (punainen kulmikas)
-    const coreGeometry = new THREE.OctahedronGeometry(0.5, 0);
+    // Päärunko (SUURI punainen kulmikas, helposti näkyvä)
+    const coreGeometry = new THREE.OctahedronGeometry(1.5, 0);
     const coreMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xff0033,
         emissive: 0xff0033,
@@ -427,6 +434,8 @@ function createFallbackEnemy() {
     core.castShadow = true;
     enemy.add(core);
     enemy.core = core;
+    
+    console.log('🔴 Luotu vihollinen:', enemy.position);
     
     // Energia-renkaat
     const ringGeometry = new THREE.TorusGeometry(0.7, 0.05, 8, 16);
@@ -854,6 +863,36 @@ function animate() {
     if (playerMixer) {
         const delta = clock.getDelta();
         playerMixer.update(delta);
+        
+        // Vaihda animaatio tilan mukaan
+        if (player.actions) {
+            const actionNames = Object.keys(player.actions);
+            
+            // Pysäytä kaikki
+            actionNames.forEach(name => {
+                if (player.actions[name].isRunning()) {
+                    player.actions[name].stop();
+                }
+            });
+            
+            // Valitse oikea animaatio
+            let currentAction = null;
+            
+            if (!playerState.onGround) {
+                // Hyppää - etsi jump animaatio
+                currentAction = player.actions['Jump'] || player.actions['jump'] || actionNames[2];
+            } else if (isMoving) {
+                // Liikkuu - etsi walk/run animaatio
+                currentAction = player.actions['Walk'] || player.actions['walk'] || player.actions['Run'] || player.actions['run'] || actionNames[1];
+            } else {
+                // Idle - etsi idle animaatio
+                currentAction = player.actions['Idle'] || player.actions['idle'] || actionNames[0];
+            }
+            
+            if (currentAction && !currentAction.isRunning()) {
+                currentAction.reset().play();
+            }
+        }
     }
     
     // Kävelyanimaatio vanhoille geometrioille (fallback)
