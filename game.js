@@ -124,6 +124,35 @@ for (let i = 0; i < 10; i++) {
     createObstacle();
 }
 
+// Viholliset (jahtaavat pelaajaa)
+const enemies = [];
+const enemyGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+const enemyMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xff00ff,
+    emissive: 0x330033
+});
+
+function createEnemy() {
+    const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+    // Spawn vihollisia kaukana pelaajasta
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 20 + Math.random() * 10;
+    enemy.position.set(
+        Math.cos(angle) * distance,
+        0.5,
+        Math.sin(angle) * distance
+    );
+    enemy.castShadow = true;
+    enemy.speed = 0.05 + Math.random() * 0.03; // Vaihtelevia nopeuksia
+    scene.add(enemy);
+    enemies.push(enemy);
+}
+
+// Luo 5 vihollista
+for (let i = 0; i < 5; i++) {
+    createEnemy();
+}
+
 // Kamera seuraa pelaajaa
 camera.position.set(0, 5, 10);
 camera.lookAt(player.position);
@@ -255,6 +284,29 @@ function animate() {
             // Peli päättyy
             gameState.gameOver = true;
             alert('Peli päättyi! Pisteet: ' + gameState.score);
+            location.reload();
+        }
+    });
+
+    // Päivitä viholliset
+    enemies.forEach((enemy) => {
+        // Laske suunta pelaajaan
+        const direction = new THREE.Vector3();
+        direction.subVectors(player.position, enemy.position);
+        direction.y = 0; // Älä liiku Y-akselilla
+        direction.normalize();
+        
+        // Liiku pelaajaa kohti
+        enemy.position.x += direction.x * enemy.speed;
+        enemy.position.z += direction.z * enemy.speed;
+        
+        // Pyöritä vihollista
+        enemy.rotation.y += 0.1;
+        
+        // Tarkista törmäys pelaajaan
+        if (checkCollision(player, enemy)) {
+            gameState.gameOver = true;
+            alert('Vihollinen sai sinut kiinni! Pisteet: ' + gameState.score);
             location.reload();
         }
     });
