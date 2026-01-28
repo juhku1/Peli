@@ -747,6 +747,46 @@ Avaa selaimessa: http://localhost:8000
 
 ---
 
+### Vaihe 4: GitHub-repositorion Tallennus
+
+#### ❓ Kysymys #4
+> "Miten tallennamme tämä githubiin?"
+
+#### 💡 Vastaus #4
+**Toimenpide:** Projektin tallennus GitHubiin
+
+**Vaiheet:**
+1. ✅ Git-repositorion alustus (`git init`)
+2. ✅ Tiedostojen lisäys (`git add .`)
+3. ✅ Ensimmäinen commit: "Initial commit: Three.js 3D game with player movement, coins, and obstacles"
+4. ✅ GitHub-repositorio luotu: https://github.com/juhku1/Peli
+5. ✅ Remote-linkitys GitHubiin
+6. ✅ Koodi pushattu GitHubiin
+
+**Käytetyt komennot:**
+```bash
+git init
+git add .
+git commit -m "Initial commit: Three.js 3D game with player movement, coins, and obstacles"
+git remote add origin https://github.com/juhku1/Peli.git
+git branch -M main
+git push -u origin main
+```
+
+**Tulos:**
+- ✅ Projekti nyt GitHubissa: **https://github.com/juhku1/Peli**
+- ✅ Kaikki 4 tiedostoa tallennettu (index.html, game.js, README.md, PROJEKTIN_HISTORIA.md)
+- ✅ Versionhallinta käytössä
+- ✅ Jatkokehitys mahdollista
+
+**Hyödyt:**
+- 📦 Varmuuskopio pilvessä
+- 🔄 Versionhallinta käytössä
+- 🌐 Helppo jakaa muiden kanssa
+- 📝 Kehityshistoria tallessa
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
 **Versio:** 1.0  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
