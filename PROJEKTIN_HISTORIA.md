@@ -1574,6 +1574,10 @@ projectile.position.copy(barrelTip);
 - ✅ Intersect-tarkistus varmistaa osuman vihollisiin
 - ✅ AAA-standardi third-person shooter -mekaniikka
 
+**Git-commitit:**
+- `7c12f13` - "Lisätty ase pelaajalle (kivääri malli)"
+- Ammuntamekaniikan korjaus sisältyy samaan committiin
+
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
