@@ -2203,8 +2203,99 @@ git commit -m "fix: korjattu animaatiot (idle/walk/jump vaihto), suuremmat vihol
 
 ---
 
+### Vaihe 30: Ampumisanimaation Toteutus
+
+#### ❓ Kysymys #30
+> "entä ampumis-animaatio?"
+
+#### 💡 Toteutus #30
+
+**Ominaisuus:** Ampumisanimaation automaattinen vaihto
+
+**Toteutus:**
+
+**1. Pelitilan laajentaminen:**
+```javascript
+const gameState = {
+    // ... muut
+    isShooting: false,
+    shootAnimationTimer: 0
+};
+```
+
+**2. Ampumisen tunnistus:**
+```javascript
+function shoot() {
+    // ...
+    gameState.isShooting = true;
+    gameState.shootAnimationTimer = 15; // 15 framea (0.25s @ 60fps)
+}
+```
+
+**3. Animaatioprioriteetti:**
+```javascript
+if (gameState.isShooting) {
+    // KORKEIN PRIORITEETTI
+    currentAction = player.actions['TPose'] || 
+                   player.actions['Shoot'] || 
+                   player.actions['Fire'];
+} else if (!playerState.onGround) {
+    // Jump
+} else if (isMoving) {
+    // Walk/Run
+} else {
+    // Idle
+}
+```
+
+**4. Ajastin:**
+```javascript
+if (gameState.shootAnimationTimer > 0) {
+    gameState.shootAnimationTimer--;
+    if (gameState.shootAnimationTimer === 0) {
+        gameState.isShooting = false; // Palaa normaaliin
+    }
+}
+```
+
+**Animaatiohierarkia (prioriteetti):**
+1. 🎯 **Shoot/Fire** (ampuu) - 15 framea
+2. 🦘 **Jump** (ilmassa)
+3. 🚶 **Walk/Run** (liikkuu)
+4. 🧍 **Idle** (paikallaan)
+
+**Tuetut animaationimet:**
+- `TPose`, `tpose` (Soldier.glb default)
+- `Shoot`, `shoot`
+- `Fire`, `fire`
+- `Attack`, `attack`
+
+**Tekninen yksityiskohta:**
+- Animaatio näkyy 15 framea = ~0.25 sekunttia @ 60fps
+- Shootin cooldown (5 framea) < animaatioaika (15 framea)
+- Näyttää luonnolliselta kun ammut nopeasti
+
+**Git-commit:**
+```bash
+git add -A
+git commit -m "feat: lisätty ampumisanimaation tuki (TPose/Shoot/Fire)"
+# Commit: a69c1ac
+```
+
+**Tulos:**
+- ✅ Hahmo näyttää ampumisanimaation kun ampuu
+- ✅ Palaa automaattisesti idle/walk-animaatioon
+- ✅ Toimii kaikissa tilanteissa (idle, liike, hyppy aikana)
+
+**Huomio Soldier.glb -mallista:**
+- Soldier.glb ei sisällä varsinaista "Shoot"-animaatiota
+- Käyttää TPose-animaatiota placeholderina
+- Mixamosta voi ladata hahmoja joissa on oikeat ampumisanimaatiot
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.5  
+**Versio:** 3.6  
 **Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
 
 ---
