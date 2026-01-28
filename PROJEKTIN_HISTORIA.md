@@ -1413,6 +1413,9 @@ projectile.velocity = direction.multiplyScalar(1.0);
 - ✅ Moderni, intuitiivinen tähtäys
 - ✅ AAA-pelin tuntuma
 
+**Git-commit:**
+- `009bb77` - "Parannettu ammunta: ammukset lähtevät nyt kamerasta (moderni camera-based shooting)"
+
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
