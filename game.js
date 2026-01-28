@@ -86,8 +86,8 @@ let playerModel = null;
 let playerMixer = null;
 let playerLoaded = false;
 
-// Lataa robotti-malli
-loader.load('models/soldier.glb', (gltf) => {
+// Lataa astronautti-malli
+loader.load('models/astronaut.glb', (gltf) => {
     // Poista placeholder jos on
     if (player.children.length > 0) {
         player.children.forEach(child => player.remove(child));
