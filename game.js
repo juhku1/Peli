@@ -73,89 +73,141 @@ const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
 fillLight.position.set(-5, 5, -5);
 scene.add(fillLight);
 
-// Pelaaja (coolampi robottihahmo)
+// 🤖 SCI-FI ROBOTTIPELAAJA - Animoitu humanoidi
 const player = new THREE.Group();
 
-// Vartalo
-const bodyGeometry = new THREE.CapsuleGeometry(0.3, 0.6, 8, 16);
-const bodyMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x00aa00,
-    metalness: 0.3,
-    roughness: 0.4
+// VARTALO (metallinsininen)
+const torsoGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+const torsoMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x1a3a5a,
+    metalness: 0.9,
+    roughness: 0.2,
+    emissive: 0x0a1a2a,
+    emissiveIntensity: 0.3
 });
-const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-body.castShadow = true;
-player.add(body);
+const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
+torso.position.y = 0.4;
+torso.castShadow = true;
+player.add(torso);
 
-// Pää
-const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+// PÄÄ (neon cyan)
+const headGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
 const headMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x00ff00,
-    metalness: 0.5,
-    roughness: 0.3,
-    emissive: 0x003300
+    color: 0x00ffff,
+    metalness: 0.8,
+    roughness: 0.1,
+    emissive: 0x00ffff,
+    emissiveIntensity: 0.5
 });
 const head = new THREE.Mesh(headGeometry, headMaterial);
-head.position.y = 0.6;
+head.position.y = 1.0;
 head.castShadow = true;
 player.add(head);
 
-// Silmät (hehkuvat)
-const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
-const eyeMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x00ffff,
-    emissive: 0x00ffff,
-    emissiveIntensity: 0.8
+// VIISORI (hehkuva lasi)
+const visorGeometry = new THREE.PlaneGeometry(0.35, 0.15);
+const visorMaterial = new THREE.MeshBasicMaterial({ 
+    color: 0xff00ff,
+    transparent: true,
+    opacity: 0.8
 });
-const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-leftEye.position.set(-0.1, 0.65, 0.2);
-player.add(leftEye);
+const visor = new THREE.Mesh(visorGeometry, visorMaterial);
+visor.position.set(0, 1.0, 0.21);
+player.add(visor);
 
-const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-rightEye.position.set(0.1, 0.65, 0.2);
-player.add(rightEye);
+// JALAT (animoidut)
+const legGeometry = new THREE.BoxGeometry(0.2, 0.7, 0.2);
+const legMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x2a4a6a,
+    metalness: 0.8,
+    roughness: 0.3
+});
 
-// ASE - Yksinkertainen kivääri
+const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
+leftLeg.position.set(-0.2, -0.35, 0);
+leftLeg.castShadow = true;
+player.add(leftLeg);
+player.leftLeg = leftLeg; // Viite animaatiota varten
+
+const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
+rightLeg.position.set(0.2, -0.35, 0);
+rightLeg.castShadow = true;
+player.add(rightLeg);
+player.rightLeg = rightLeg; // Viite animaatiota varten
+
+// KÄDET (animoidut)
+const armGeometry = new THREE.BoxGeometry(0.15, 0.6, 0.15);
+const armMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x2a4a6a,
+    metalness: 0.8,
+    roughness: 0.3
+});
+
+const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+leftArm.position.set(-0.4, 0.3, 0);
+leftArm.castShadow = true;
+player.add(leftArm);
+player.leftArm = leftArm;
+
+const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+rightArm.position.set(0.4, 0.3, 0);
+rightArm.castShadow = true;
+player.add(rightArm);
+player.rightArm = rightArm;
+
+// NEONVALOT vartalossa
+const lightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
+const lightMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+const light1 = new THREE.Mesh(lightGeometry, lightMaterial);
+light1.position.set(-0.2, 0.5, 0.21);
+player.add(light1);
+const light2 = new THREE.Mesh(lightGeometry, lightMaterial);
+light2.position.set(0.2, 0.5, 0.21);
+player.add(light2);
+
+// 🔫 SCI-FI ASE
 const weapon = new THREE.Group();
 
-// Aseen runko (musta)
+// Päärunko (neon sininen)
 const weaponBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.15, 0.8),
+    new THREE.BoxGeometry(0.12, 0.18, 0.9),
     new THREE.MeshStandardMaterial({ 
-        color: 0x1a1a1a,
-        metalness: 0.8,
-        roughness: 0.2
+        color: 0x0066ff,
+        metalness: 0.9,
+        roughness: 0.1,
+        emissive: 0x0033aa,
+        emissiveIntensity: 0.3
     })
 );
 weapon.add(weaponBody);
 
-// Piippu (sinertävä)
+// Energia-piippu (cyan hehku)
 const barrel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8),
+    new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8),
     new THREE.MeshStandardMaterial({ 
-        color: 0x2a2a3a,
-        metalness: 0.9,
-        roughness: 0.1
+        color: 0x00ffff,
+        metalness: 1.0,
+        roughness: 0.0,
+        emissive: 0x00ffff,
+        emissiveIntensity: 0.5
     })
 );
 barrel.rotation.x = Math.PI / 2;
-barrel.position.set(0, 0, -0.65);
+barrel.position.set(0, 0, -0.75);
 weapon.add(barrel);
 
-// Kahva
-const grip = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.2, 0.1),
-    new THREE.MeshStandardMaterial({ 
-        color: 0x3a2a1a,
-        roughness: 0.8
-    })
+// Energia-ydin (pulssoiva)
+const core = new THREE.Mesh(
+    new THREE.SphereGeometry(0.06, 8, 8),
+    new THREE.MeshBasicMaterial({ color: 0xff00ff })
 );
-grip.position.set(0, -0.15, 0.1);
-weapon.add(grip);
+core.position.set(0, 0, 0.2);
+weapon.add(core);
+weapon.core = core; // Viite animaatiota varten
 
-// Aseta ase pelaajan oikealle puolelle
-weapon.position.set(0.25, 0.3, -0.3);
-weapon.rotation.y = -0.2;
+// Aseta ase oikeaan käteen
+weapon.position.set(0.4, 0.3, -0.4);
+weapon.rotation.y = -0.3;
 player.add(weapon);
 
 // Tallenna viite aseeseen
@@ -173,104 +225,123 @@ const playerState = {
     moveSpeed: 0.15
 };
 
-// Maa (teksturoitu ruoho-efekti)
+// 🌐 SCI-FI GRID-LATTIA
 const groundGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
 const groundMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x4a7c3a,
-    roughness: 0.9,
-    metalness: 0.0
+    color: 0x0a0a1a,
+    roughness: 0.8,
+    metalness: 0.6,
+    emissive: 0x0a0a2a,
+    emissiveIntensity: 0.2
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
 
-// Lisää epätasaisuutta maahan
-const positions = ground.geometry.attributes.position;
-for (let i = 0; i < positions.count; i++) {
-    const y = Math.random() * 0.3;
-    positions.setZ(i, y);
-}
-positions.needsUpdate = true;
-ground.geometry.computeVertexNormals();
+// Grid-viivat
+const gridHelper = new THREE.GridHelper(100, 50, 0x00ffff, 0x004488);
+gridHelper.position.y = 0.01;
+gridHelper.material.opacity = 0.3;
+gridHelper.material.transparent = true;
+scene.add(gridHelper);
 
 scene.add(ground);
 
-// Taustamaisema - Puut
-function createTree(x, z) {
-    const tree = new THREE.Group();
+// 🌌 SKYBOX (tähtitaivas)
+scene.background = new THREE.Color(0x000510);
+scene.fog = new THREE.FogExp2(0x000510, 0.015);
+
+// ✨ NEON-PYLVÄÄT (korvaa puut)
+function createNeonPillar(x, z) {
+    const pillar = new THREE.Group();
     
-    // Runko
-    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
-    const trunkMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x8b4513,
-        roughness: 0.9
+    // Pääpylväs
+    const pillarGeometry = new THREE.CylinderGeometry(0.3, 0.3, 6, 8);
+    const pillarMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x1a1a3a,
+        roughness: 0.2,
+        metalness: 0.9,
+        emissive: 0x0a0a2a,
+        emissiveIntensity: 0.3
     });
-    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-    trunk.position.y = 1;
-    trunk.castShadow = true;
-    tree.add(trunk);
+    const main = new THREE.Mesh(pillarGeometry, pillarMaterial);
+    main.position.y = 3;
+    main.castShadow = true;
+    pillar.add(main);
     
-    // Latvus (3 kerrosta)
-    const foliageGeometry = new THREE.ConeGeometry(1.2, 2, 8);
-    const foliageMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x2d5016,
-        roughness: 0.8
-    });
-    
+    // Neon-renkaat (pyörivät, eri värejä)
+    const colors = [0x00ffff, 0xff00ff, 0x00ff00];
     for (let i = 0; i < 3; i++) {
-        const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-        foliage.position.y = 2.5 + i * 0.6;
-        foliage.scale.setScalar(1 - i * 0.2);
-        foliage.castShadow = true;
-        tree.add(foliage);
+        const ringGeometry = new THREE.TorusGeometry(0.5, 0.08, 8, 16);
+        const ringMaterial = new THREE.MeshBasicMaterial({ 
+            color: colors[i % colors.length],
+            transparent: true,
+            opacity: 0.8
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.y = 1 + i * 1.5;
+        ring.rotation.x = Math.PI / 2;
+        pillar.add(ring);
     }
     
-    tree.position.set(x, 0, z);
-    return tree;
+    // Huippuvalo
+    const topLight = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0x00ffff })
+    );
+    topLight.position.y = 6;
+    pillar.add(topLight);
+    
+    pillar.position.set(x, 0, z);
+    return pillar;
 }
 
-// Luo puita reunoille
-for (let i = 0; i < 30; i++) {
-    const angle = (i / 30) * Math.PI * 2;
+// Luo neon-pylväitä reunoille
+for (let i = 0; i < 20; i++) {
+    const angle = (i / 20) * Math.PI * 2;
     const distance = 35 + Math.random() * 10;
-    const tree = createTree(
+    const pillar = createNeonPillar(
         Math.cos(angle) * distance,
         Math.sin(angle) * distance
     );
-    scene.add(tree);
+    scene.add(pillar);
 }
 
-// Kivet
-const rockGeometry = new THREE.DodecahedronGeometry(0.5, 0);
-const rockMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x808080,
-    roughness: 1.0,
-    metalness: 0.0
+// 🔮 ENERGIA-KRISTALLIT (korvaa kivet)
+const crystalGeometry = new THREE.OctahedronGeometry(0.6, 0);
+const crystalMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x00ffaa,
+    roughness: 0.1,
+    metalness: 0.9,
+    emissive: 0x00ffaa,
+    emissiveIntensity: 0.5,
+    transparent: true,
+    opacity: 0.8
 });
 
 for (let i = 0; i < 15; i++) {
-    const rock = new THREE.Mesh(rockGeometry, rockMaterial);
-    rock.position.set(
+    const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+    crystal.position.set(
         (Math.random() - 0.5) * 80,
-        0.3,
+        0.6,
         (Math.random() - 0.5) * 80
     );
-    rock.scale.set(
+    crystal.scale.set(
         0.5 + Math.random(),
-        0.5 + Math.random() * 0.5,
+        0.8 + Math.random() * 0.8,
         0.5 + Math.random()
     );
-    rock.rotation.set(
+    crystal.rotation.set(
         Math.random() * Math.PI,
         Math.random() * Math.PI,
         Math.random() * Math.PI
     );
-    rock.castShadow = true;
-    rock.receiveShadow = true;
-    scene.add(rock);
+    crystal.castShadow = true;
+    crystal.receiveShadow = true;
+    scene.add(crystal);
 }
 
-// Esteet (keräiltävät kolikot) - Parannettu ulkoasu
+// ⚡ ENERGIA-ORBS (keräiltävät, korvaa kolikot)
 const coins = [];
 const coinGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16);
 const coinMaterial = new THREE.MeshStandardMaterial({ 
@@ -327,30 +398,67 @@ for (let i = 0; i < 10; i++) {
     createObstacle();
 }
 
-// Viholliset (jahtaavat pelaajaa) - Pelottavampi ulkoasu
+// 🛸 SCI-FI VIHOLLISROBOTIT - Drone-tyyliset
 const enemies = [];
-const enemyGeometry = new THREE.IcosahedronGeometry(0.5, 1);
-const enemyMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0xff00ff,
-    emissive: 0xff00ff,
-    emissiveIntensity: 0.5,
-    metalness: 0.8,
-    roughness: 0.2,
-    wireframe: false
-});
 
 function createEnemy() {
-    const enemy = new THREE.Mesh(enemyGeometry, enemyMaterial);
+    const enemy = new THREE.Group();
+    
+    // Päärunko (punainen kulmik)
+    const coreGeometry = new THREE.OctahedronGeometry(0.5, 0);
+    const coreMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xff0033,
+        emissive: 0xff0033,
+        emissiveIntensity: 0.8,
+        metalness: 0.9,
+        roughness: 0.1
+    });
+    const core = new THREE.Mesh(coreGeometry, coreMaterial);
+    core.castShadow = true;
+    enemy.add(core);
+    enemy.core = core; // Animaatiota varten
+    
+    // Energia-renkaat (kelluvat ympärillä)
+    const ringGeometry = new THREE.TorusGeometry(0.7, 0.05, 8, 16);
+    const ringMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xff00ff,
+        transparent: true,
+        opacity: 0.7
+    });
+    
+    const ring1 = new THREE.Mesh(ringGeometry, ringMaterial);
+    ring1.rotation.x = Math.PI / 2;
+    enemy.add(ring1);
+    enemy.ring1 = ring1;
+    
+    const ring2 = new THREE.Mesh(ringGeometry, ringMaterial);
+    ring2.rotation.y = Math.PI / 2;
+    enemy.add(ring2);
+    enemy.ring2 = ring2;
+    
+    // Varoitusvalot
+    const lightGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const lightMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+    
+    for (let i = 0; i < 4; i++) {
+        const light = new THREE.Mesh(lightGeometry, lightMaterial);
+        const angle = (i / 4) * Math.PI * 2;
+        light.position.set(Math.cos(angle) * 0.5, 0, Math.sin(angle) * 0.5);
+        enemy.add(light);
+    }
+    
     // Spawn vihollisia kaukana pelaajasta
     const angle = Math.random() * Math.PI * 2;
     const distance = 20 + Math.random() * 10;
     enemy.position.set(
         Math.cos(angle) * distance,
-        0.5,
+        1.5, // Kelluvat ilmassa
         Math.sin(angle) * distance
     );
-    enemy.castShadow = true;
-    enemy.speed = 0.05 + Math.random() * 0.03; // Vaihtelevia nopeuksia
+    
+    enemy.speed = 0.05 + Math.random() * 0.03;
+    enemy.floatOffset = Math.random() * Math.PI * 2; // Kellunta-animaatio
+    
     scene.add(enemy);
     enemies.push(enemy);
 }
@@ -702,21 +810,56 @@ function animate() {
     const forward = new THREE.Vector3(-Math.sin(mouse.yaw), 0, -Math.cos(mouse.yaw));
     const right = new THREE.Vector3(Math.cos(mouse.yaw), 0, -Math.sin(mouse.yaw));
     
+    let isMoving = false;
+    
     if (keys.forward) {
         player.position.x += forward.x * playerState.moveSpeed;
         player.position.z += forward.z * playerState.moveSpeed;
+        isMoving = true;
     }
     if (keys.backward) {
         player.position.x -= forward.x * playerState.moveSpeed;
         player.position.z -= forward.z * playerState.moveSpeed;
+        isMoving = true;
     }
     if (keys.left) {
         player.position.x -= right.x * playerState.moveSpeed;
         player.position.z -= right.z * playerState.moveSpeed;
+        isMoving = true;
     }
     if (keys.right) {
         player.position.x += right.x * playerState.moveSpeed;
         player.position.z += right.z * playerState.moveSpeed;
+        isMoving = true;
+    }
+    
+    // 🎬 KÄVELYANIMAATIO
+    if (isMoving && playerState.onGround) {
+        const walkCycle = Date.now() * 0.01; // Aika-pohjainen animaatio
+        
+        // Jalat vaihtelevat (yksi eteen, toinen taakse)
+        player.leftLeg.rotation.x = Math.sin(walkCycle) * 0.4;
+        player.rightLeg.rotation.x = Math.sin(walkCycle + Math.PI) * 0.4;
+        
+        // Kädet heiluvat vastakkaissuuntiin
+        player.leftArm.rotation.x = Math.sin(walkCycle + Math.PI) * 0.3;
+        player.rightArm.rotation.x = Math.sin(walkCycle) * 0.3;
+        
+        // Koko vartalo bobaa (ylös-alas liike)
+        player.position.y = 0.5 + Math.abs(Math.sin(walkCycle * 2)) * 0.05;
+    } else {
+        // Palautetaan neutraaliin asentoon kun ei liiku
+        player.leftLeg.rotation.x *= 0.9;
+        player.rightLeg.rotation.x *= 0.9;
+        player.leftArm.rotation.x *= 0.9;
+        player.rightArm.rotation.x *= 0.9;
+    }
+    
+    // 🔫 ASEEN PULSSI-ANIMAATIO
+    if (weapon.core) {
+        const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 1.0;
+        weapon.core.material.emissiveIntensity = pulse;
+        weapon.core.scale.setScalar(0.8 + pulse * 0.2);
     }
 
     // Hyppy
@@ -781,8 +924,22 @@ function animate() {
         enemy.position.x += direction.x * enemy.speed;
         enemy.position.z += direction.z * enemy.speed;
         
-        // Pyöritä vihollista
-        enemy.rotation.y += 0.1;
+        // 🛸 DRONE-ANIMAATIOT
+        // Kellunta ylös-alas
+        const floatTime = Date.now() * 0.002 + enemy.floatOffset;
+        enemy.position.y = 1.5 + Math.sin(floatTime) * 0.3;
+        
+        // Pyörivä ydin
+        if (enemy.core) {
+            enemy.core.rotation.x += 0.05;
+            enemy.core.rotation.y += 0.05;
+        }
+        
+        // Pyörivät energiarenkaat
+        if (enemy.ring1 && enemy.ring2) {
+            enemy.ring1.rotation.z += 0.08;
+            enemy.ring2.rotation.x += 0.06;
+        }
         
         // Tarkista törmäys pelaajaan
         if (checkCollision(player, enemy)) {

@@ -1580,8 +1580,244 @@ projectile.position.copy(barrelTip);
 
 ---
 
+### 📋 Vaihe 12: Täydellinen visuaalinen uudistus - Sci-Fi Robotti-teema
+
+#### ❓ Kysymys #21
+> "Nyt voitaisiin miettiä miksi peli on näin ruma. Miten saamme siitä ammattimaisen näköisen? Yritämmekö piirtää itse, vai löytyykö jotain parempia keinoja?"
+
+#### 💡 Vastaus #21 (Keskustelu)
+**Kysymys:** Paras tapa parantaa pelin ulkonäköä?
+
+**Vaihtoehdot tarjottiin:**
+1. Paremmat materiaalit ja efektit (pelkkää koodia)
+2. Ilmaiset 3D-mallit (Sketchfab, Kenney.nl, Quaternius)
+3. Procedural-animaatiot (generoitu koodilla)
+
+---
+
+#### ❓ Kysymys #22
+> "haluan ihan toisen näköisen maiseman, pelihahmon ja vihollset. Niiden pitää oikeasti kävellä, juosta ja hyppiä."
+
+#### 💡 Vastaus #22 (Tyylivalinta)
+**Tarjotut teemat:**
+- Sci-Fi / Robotti
+- Fantasy / Keskiaikainen
+- Zombie Survival
+- Low-Poly Tyylikäs
+
+**Käyttäjän valinta:** "sci-fi ja robotit"
+
+---
+
+#### ❓ Kysymys #23 (Toteutus)
+> "sci-fi ja robotit"
+
+#### 💡 Vastaus #23
+**Toimenpide:** Täydellinen visuaalinen uudistus sci-fi robotti-teemaan
+
+**TOTEUTETUT MUUTOKSET:**
+
+### 🤖 PELAAJA - Animoitu Humanoidi Robotti
+
+**Rakenne:**
+```javascript
+// VARTALO (metallinsininen)
+- BoxGeometry(0.6, 0.8, 0.4)
+- Väri: 0x1a3a5a (tummansininen metalli)
+- Metalness: 0.9, emissive: 0x0a1a2a
+
+// PÄÄ (neon cyan)
+- BoxGeometry(0.4, 0.4, 0.4)
+- Väri: 0x00ffff (cyan)
+- Emissive intensity: 0.5 (hehkuu)
+
+// VIISORI (hehkuva magenta lasi)
+- PlaneGeometry(0.35, 0.15)
+- Väri: 0xff00ff, opacity: 0.8
+
+// JALAT JA KÄDET (animoidut)
+- BoxGeometry (raajat)
+- Väri: 0x2a4a6a
+- Viitteet: leftLeg, rightLeg, leftArm, rightArm
+
+// NEONVALOT vartalossa
+- 2x cyan-palloa (0x00ffff)
+```
+
+**Animaatiot:**
+```javascript
+// Kävelyanimaatio
+if (isMoving && playerState.onGround) {
+    const walkCycle = Date.now() * 0.01;
+    
+    // Jalat vaihtelevat
+    player.leftLeg.rotation.x = Math.sin(walkCycle) * 0.4;
+    player.rightLeg.rotation.x = Math.sin(walkCycle + Math.PI) * 0.4;
+    
+    // Kädet heiluvat
+    player.leftArm.rotation.x = Math.sin(walkCycle + Math.PI) * 0.3;
+    player.rightArm.rotation.x = Math.sin(walkCycle) * 0.3;
+    
+    // Vartalo bobaa
+    player.position.y = 0.5 + Math.abs(Math.sin(walkCycle * 2)) * 0.05;
+}
+```
+
+### 🔫 SCI-FI ASE
+
+**Rakenne:**
+```javascript
+// Päärunko (neon sininen)
+- BoxGeometry(0.12, 0.18, 0.9)
+- Väri: 0x0066ff, emissive: 0x0033aa
+
+// Energia-piippu (cyan hehku)
+- CylinderGeometry(0.04, 0.04, 0.6)
+- Väri: 0x00ffff, emissive intensity: 0.5
+
+// Energia-ydin (pulssoiva magenta)
+- SphereGeometry(0.06)
+- Väri: 0xff00ff
+```
+
+**Animaatio:**
+```javascript
+// Pulssi-animaatio
+const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 1.0;
+weapon.core.material.emissiveIntensity = pulse;
+weapon.core.scale.setScalar(0.8 + pulse * 0.2);
+```
+
+### 🛸 VIHOLLISET - Sci-Fi Drone-robotit
+
+**Rakenne:**
+```javascript
+// Päärunko (punainen octahedron)
+- OctahedronGeometry(0.5)
+- Väri: 0xff0033, emissive intensity: 0.8
+
+// Energia-renkaat (2 kpl, magenta)
+- TorusGeometry(0.7, 0.05)
+- Väri: 0xff00ff, opacity: 0.7
+
+// Varoitusvalot (4 kpl)
+- SphereGeometry(0.1)
+- Väri: 0xff0000
+```
+
+**Animaatiot:**
+```javascript
+// Kellunta ylös-alas
+const floatTime = Date.now() * 0.002 + enemy.floatOffset;
+enemy.position.y = 1.5 + Math.sin(floatTime) * 0.3;
+
+// Pyörivä ydin
+enemy.core.rotation.x += 0.05;
+enemy.core.rotation.y += 0.05;
+
+// Pyörivät energiarenkaat
+enemy.ring1.rotation.z += 0.08;
+enemy.ring2.rotation.x += 0.06;
+```
+
+### 🌌 YMPÄRISTÖ - Futuristinen Areena
+
+**Lattia:**
+```javascript
+// Grid-lattia (tumma metalli)
+- PlaneGeometry(100, 100, 50, 50)
+- Väri: 0x0a0a1a (musta-sininen)
+- Emissive: 0x0a0a2a
+
+// Cyan grid-viivat
+- GridHelper(100, 50, 0x00ffff, 0x004488)
+- Opacity: 0.3
+```
+
+**Taivas:**
+```javascript
+// Tähtitaivas
+scene.background = new THREE.Color(0x000510);
+scene.fog = new THREE.FogExp2(0x000510, 0.015);
+```
+
+**Neon-pylväät (20 kpl, korvasi puut):**
+```javascript
+// Metalliset pylväät
+- CylinderGeometry(0.3, 0.3, 6)
+- Väri: 0x1a1a3a
+
+// 3 neonrengasta per pylväs (cyan, magenta, vihreä)
+- TorusGeometry(0.5, 0.08)
+- Pyörivät eri tasoilla
+
+// Huippuvalo (cyan)
+- SphereGeometry(0.2)
+```
+
+**Energia-kristallit (15 kpl, korvasi kivet):**
+```javascript
+// Oktahedron-kristallit
+- OctahedronGeometry(0.6)
+- Väri: 0x00ffaa (vihertävä cyan)
+- Emissive intensity: 0.5
+- Transparent: true, opacity: 0.8
+```
+
+### 🎨 VISUAALISET PARANNUKSET
+
+**Materiaalit:**
+- Korkea metalness (0.8-0.9) kaikissa roboteissa
+- Matala roughness (0.1-0.3) kiiltävät pinnat
+- Emissive-värit kaikkialla
+- Läpinäkyvyys energiarenkaissa
+
+**Väripaletti:**
+- Pelaaja: Sininen (0x1a3a5a) + Cyan (0x00ffff)
+- Viholliset: Punainen (0xff0033) + Magenta (0xff00ff)
+- Ympäristö: Tumma (0x0a0a1a) + Cyan-viivat (0x00ffff)
+- Kristallit: Vihertävä (0x00ffaa)
+
+**Valaistus:**
+- Warm directional light (0xffffaa)
+- Blue fill light (0x8888ff)
+- Emissive materials lisäävät hehkua
+
+### 📊 ANIMAATIOT YHTEENVETO
+
+| Elementti | Animaatio | Tekniikka |
+|-----------|-----------|-----------|
+| Pelaajan jalat | Kävelysykli | Math.sin(time) rotation.x |
+| Pelaajan kädet | Heiluminen | Math.sin(time + π) rotation.x |
+| Pelaajan vartalo | Bob-liike | Math.sin() position.y |
+| Aseen ydin | Pulssi | Math.sin() emissiveIntensity + scale |
+| Vihollisen kellunta | Ylös-alas | Math.sin() position.y |
+| Vihollisen ydin | Pyöriminen | rotation.x/y increment |
+| Energiarenkaat | Pyöriminen | rotation.z/x increment |
+
+### 🎯 TULOS
+
+**Visuaalinen muutos:**
+- ❌ Ennen: Vihreät kapselit, yksinkertainen maasto
+- ✅ Jälkeen: Neon-robotit, sci-fi grid-areena, animaatiot
+
+**Ammattimainen ilme:**
+- ✅ Yhtenäinen sci-fi teema
+- ✅ Neon-värit ja hehkuvat materiaalit
+- ✅ Sujuvat animaatiot
+- ✅ Futuristinen tunnelma
+- ✅ Elävä, dynaaminen maailma
+
+**Tekninen toteutus:**
+- 100% procedural (ei 3D-malleja)
+- Kaikki Three.js geometrioilla
+- Aika-pohjaiset animaatiot
+- Kevyt ja suorituskykyinen
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 2.4  
+**Versio:** 3.0  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
 
 ---

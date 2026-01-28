@@ -1,3 +1,9 @@
+
+pkill -f "python3 -m http.server"
+cd /tmp/3d-game && python3 -m http.server 8000
+
+
+
 # 3D Selainpeli - Three.js
 
 Yksinkertainen 3D-selainpeli, jossa kerätään kolikoita ja väistellään esteitä.
