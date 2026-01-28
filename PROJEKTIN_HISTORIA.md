@@ -1814,6 +1814,9 @@ scene.fog = new THREE.FogExp2(0x000510, 0.015);
 - Aika-pohjaiset animaatiot
 - Kevyt ja suorituskykyinen
 
+**Git-commit:**
+- `e9cdd0b` - "Täydellinen visuaalinen uudistus: Sci-Fi robotti-teema animaatioilla"
+
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
