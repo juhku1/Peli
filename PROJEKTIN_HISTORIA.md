@@ -2555,11 +2555,126 @@ if (!targetAction.isRunning()) {
 - ✅ Hyppy-animaatiot oikein
 - ✅ Ei enää jäätymistä
 
+
+
+
+
+///// UNDO JA PALUU AIKAISEMPAAN:::::
+
+Poista kaikki vanhat animaatiot ja ampumistoiminnot. Jätä vain tämä uusi hahmo. rakennetaan sille toiminnot alusta.
+
+
+
+---
+
+### Vaihe 36: Puhdas Alku - Ampuminen Poistettu
+
+#### 🎮 Päätös #36
+> "Poista kaikki vanhat animaatiot ja ampumistoiminnot. Jätä vain tämä uusi hahmo. rakennetaan sille toiminnot alusta."
+
+**Tavoite:**
+- Yksinkertaistaa peliä
+- Rakentaa toiminnot alusta oikein
+- Keskittyä perusliikkumiseen ja animaatioihin ensin
+
+#### 💡 Toteutus #36
+
+**Poistetut toiminnot:**
+1. ❌ Ampuminen (hiiren vasen nappi)
+2. ❌ Ammukset ja projectiles-array
+3. ❌ Lataaminen (R-näppäin)
+4. ❌ Ammuslaskuri ja reload-systeemi
+5. ❌ Muzzle flash -efektit
+6. ❌ Ampumisanimaatiot
+7. ❌ Shoot cooldown ja timers
+8. ❌ Vanhat fallback-animaatiot
+9. ❌ Aseen pulssi-animaatio
+
+**Yksinkertaistettu game state:**
+```javascript
+// ENNEN:
+const gameState = {
+    score: 0,
+    gameOver: false,
+    speed: 0.1,
+    kills: 0,
+    ammo: 30,
+    maxAmmo: 30,
+    reloading: false,
+    canShoot: true,
+    shootCooldown: 0,
+    isShooting: false,
+    shootAnimationTimer: 0
+};
+
+// JÄLKEEN:
+const gameState = {
+    score: 0,
+    gameOver: false,
+    speed: 0.1,
+    kills: 0
+};
+```
+
+**Yksinkertaistetut näppäimet:**
+```javascript
+// ENNEN: 9 tilaa
+const keys = {
+    forward, backward, left, right,
+    jump, shoot, run, duck
+};
+
+// JÄLKEEN: 7 tilaa
+const keys = {
+    forward, backward, left, right,
+    jump, run, duck
+};
+```
+
+**Jäljellä olevat toiminnot:**
+- ✅ **WASD** → Liikkuminen (hiiren suuntaan)
+- ✅ **Shift** → Juoksu (nopeampi)
+- ✅ **Ctrl** → Kyykistys (hitaampi)
+- ✅ **Välilyönti** → Hyppy
+- ✅ **Hiiri** → Kameran ohjaus (yaw/pitch)
+- ✅ **Alt** → Estetty (ei häiriöitä)
+
+**Jäljellä olevat animaatiot:**
+1. Idle_Gun / Idle
+2. Walk_Gun / Walk
+3. Run_Gun / Run
+4. Duck
+5. Jump
+6. Jump_Land / Jump_Idle
+7. Death (varaus)
+
+**Poistetut animaatiot käytöstä:**
+- Run_Gun_Shoot
+- Vanhat fallback-geometriat
+- Kävelyanimaatio raajat (leftLeg, rightLeg jne.)
+
+**Muut korjaukset:**
+- Alt-näppäimen esto (ei enää selaimen valikon avautumista)
+- Animaatiojumien korjaus (player.currentAnimation tracking)
+- Sujuvammat animaatiosiirtymät fadeIn/fadeOut
+
+**Pelin nykytila:**
+- Puhdas kolmannen persoonan liikkumispeli
+- Astronautti-hahmo toimivilla animaatioilla
+- Ei vihollisia, ei esteitä, ei kolikoita
+- Valmis alusta uusien ominaisuuksien rakentamiseen
+
+**Seuraavat mahdolliset lisäykset:**
+- Uusi ampumisjärjestelmä (jos halutaan)
+- Viholliset takaisin (jos halutaan)
+- Uudet gameplay-mekaniikat
+- Lisää emote-animaatioita (Wave, Yes, No, Punch)
+
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 4.1  
-**Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
+**Versio:** 4.2  
+**Seuraava päivitys:** Kun uudet ominaisuudet rakennettu
 
 ---
 

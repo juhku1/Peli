@@ -10,14 +10,18 @@ const gameState = {
     score: 0,
     gameOver: false,
     speed: 0.1,
-    kills: 0,
-    ammo: 30,
-    maxAmmo: 30,
-    reloading: false,
-    canShoot: true,
-    shootCooldown: 0,
-    isShooting: false,
-    shootAnimationTimer: 0
+    kills: 0
+};
+
+// Näppäimistön tila
+const keys = {
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    jump: false,
+    run: false,
+    duck: false
 };
 
 // Hiiren ohjaus
@@ -524,6 +528,11 @@ camera.lookAt(player.position);
 
 // Näppäimistökuuntelijat
 document.addEventListener('keydown', (e) => {
+    // Estä Alt-näppäimen oletustoiminto (selaimen valikko)
+    if (e.key === 'Alt' || e.altKey) {
+        e.preventDefault();
+    }
+    
     switch(e.code) {
         case 'KeyW':
         case 'ArrowUp':
@@ -545,9 +554,6 @@ document.addEventListener('keydown', (e) => {
             if (playerState.onGround) {
                 keys.jump = true;
             }
-            break;
-        case 'KeyR':
-            reload();
             break;
         case 'ShiftLeft':
         case 'ShiftRight':
@@ -609,27 +615,10 @@ document.addEventListener('pointerlockchange', () => {
 document.addEventListener('mousemove', (e) => {
     if (isPointerLocked) {
         mouse.yaw -= e.movementX * mouse.sensitivity;
-        mouse.pitch += e.movementY * mouse.sensitivity; // Korjattu: + eikä -
+        mouse.pitch += e.movementY * mouse.sensitivity;
         
-        // Rajoita pystykulmaa (ei voi katsoa liikaa ylös/alas)
+        // Rajoita pystykulmaa
         mouse.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 6, mouse.pitch));
-    }
-});
-
-// Hiiren klikkaus - Ammu!
-document.addEventListener('mousedown', (e) => {
-    if (e.button === 0 && !gameState.gameOver) { // Vasen nappi
-        shoot();
-    } else if (e.button === 2) { // Oikea nappi - Zoom
-        e.preventDefault();
-        mouse.isZooming = true;
-    }
-});
-
-document.addEventListener('mouseup', (e) => {
-    if (e.button === 2) { // Oikea nappi - lopeta zoom
-        e.preventDefault();
-        mouse.isZooming = false;
     }
 });
 
@@ -637,120 +626,6 @@ document.addEventListener('mouseup', (e) => {
 document.addEventListener('contextmenu', (e) => {
     e.preventDefault();
 });
-
-// Ammunta
-function shoot() {
-    // Tarkista voiko ampua
-    if (!gameState.canShoot || gameState.reloading || gameState.ammo <= 0) {
-        if (gameState.ammo <= 0 && !gameState.reloading) {
-            reload();
-        }
-        return;
-    }
-    
-    const projectileGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-    const projectileMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x00ffff,
-        emissive: 0x00ffff,
-        emissiveIntensity: 1.0
-    });
-    const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
-    
-    // 1. TÄHTÄYS: Raycasting kameran keskeltä (crosshair osoittaa tänne)
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-    
-    // Tarkista osuuko johonkin objektiin
-    const intersects = raycaster.intersectObjects(scene.children, true);
-    
-    // Tähtäyspiste: joko osuma tai 1000 yksikköä kameran suuntaan
-    const aimPoint = new THREE.Vector3();
-    if (intersects.length > 0) {
-        // Osui johonkin - käytä osumapistettä
-        aimPoint.copy(intersects[0].point);
-    } else {
-        // Ei osumaa - tähtää kauas eteenpäin
-        raycaster.ray.at(1000, aimPoint);
-    }
-    
-    // 2. ASEEN PIIPUN SIJAINTI maailmankoordinaateissa
-    // Lasketaan piipun pää oikein aseen transformaation kautta
-    const barrelTip = new THREE.Vector3(0, 0, -0.9);
-    if (player.weapon) {
-        player.weapon.localToWorld(barrelTip);
-    } else {
-        // Jos asetta ei ole, käytä pelaajan sijaintia
-        barrelTip.copy(player.position);
-        barrelTip.y += 0.5;
-    }
-    
-    // Ammus lähtee piipun päästä
-    projectile.position.copy(barrelTip);
-    
-    // 3. SUUNTA: Piipusta kohti tähtäyspistettä
-    const direction = new THREE.Vector3();
-    direction.subVectors(aimPoint, barrelTip).normalize();
-    
-    projectile.velocity = direction.multiplyScalar(1.2); // Hieman nopeampi
-    projectile.life = 150;
-    
-    scene.add(projectile);
-    projectiles.push(projectile);
-    
-    // Muzzle flash piipun päässä
-    const flashGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-    const flashMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xffff00,
-        transparent: true,
-        opacity: 1
-    });
-    const flash = new THREE.Mesh(flashGeometry, flashMaterial);
-    flash.position.copy(barrelTip);
-    scene.add(flash);
-    
-    // Poista flash nopeasti
-    setTimeout(() => {
-        flash.material.opacity = 0.5;
-        setTimeout(() => {
-            scene.remove(flash);
-        }, 50);
-    }, 50);
-    
-    // Vähennä ammuksia
-    gameState.ammo--;
-    updateAmmo();
-    
-    // Cooldown seuraavaan ampumiseen
-    gameState.canShoot = false;
-    gameState.shootCooldown = 5; // 5 framea
-    gameState.isShooting = true;
-    gameState.shootAnimationTimer = 15; // Animaatio näkyy 15 framea
-}
-
-// Lataa ammukset
-function reload() {
-    if (gameState.reloading) return;
-    
-    gameState.reloading = true;
-    
-    setTimeout(() => {
-        gameState.ammo = gameState.maxAmmo;
-        gameState.reloading = false;
-        updateAmmo();
-    }, 1500); // 1.5 sekuntia
-}
-
-// Päivitä ammusnäyttö
-function updateAmmo() {
-    const ammoElement = document.getElementById('ammo');
-    if (ammoElement) {
-        if (gameState.reloading) {
-            ammoElement.textContent = 'Ladataan...';
-        } else {
-            ammoElement.textContent = gameState.ammo + '/' + gameState.maxAmmo;
-        }
-    }
-}
 
 // Törmäystarkistus
 function checkCollision(obj1, obj2) {
@@ -873,22 +748,6 @@ function animate() {
 
     if (gameState.gameOver) return;
     
-    // Päivitä shoot cooldown
-    if (gameState.shootCooldown > 0) {
-        gameState.shootCooldown--;
-        if (gameState.shootCooldown === 0) {
-            gameState.canShoot = true;
-        }
-    }
-    
-    // Päivitä ampumisanimaatiotimer
-    if (gameState.shootAnimationTimer > 0) {
-        gameState.shootAnimationTimer--;
-        if (gameState.shootAnimationTimer === 0) {
-            gameState.isShooting = false;
-        }
-    }
-
     // Liikkuminen - nyt hiiren suuntaan nähden (FPS-tyyli)
     const forward = new THREE.Vector3(-Math.sin(mouse.yaw), 0, -Math.cos(mouse.yaw));
     const right = new THREE.Vector3(Math.cos(mouse.yaw), 0, -Math.sin(mouse.yaw));
@@ -968,12 +827,27 @@ function animate() {
                     }
                 }
             }
-            // 4. LIIKE + AMPUMINEN
-            else if (isMoving && gameState.isShooting) {
-                targetAnimationName = 'CharacterArmature|Run_Gun_Shoot';
-            }
-            // 5. JUOKSU (Shift painettuna)
+            // 4. JUOKSU (Shift painettuna)
             else if (isMoving && keys.run) {
+                targetAnimationName = 'CharacterArmature|Run_Gun';
+                if (!player.actions[targetAnimationName]) {
+                    targetAnimationName = 'CharacterArmature|Run';
+                }
+            }
+            // 5. KÄVELY
+            else if (isMoving) {
+                targetAnimationName = 'CharacterArmature|Walk_Gun';
+                if (!player.actions[targetAnimationName]) {
+                    targetAnimationName = 'CharacterArmature|Walk';
+                }
+            }
+            // 6. IDLE (paikallaan)
+            else {
+                targetAnimationName = 'CharacterArmature|Idle_Gun';
+                if (!player.actions[targetAnimationName]) {
+                    targetAnimationName = 'CharacterArmature|Idle';
+                }
+            }
                 targetAnimationName = 'CharacterArmature|Run_Gun';
                 if (!player.actions[targetAnimationName]) {
                     targetAnimationName = 'CharacterArmature|Run';
@@ -994,48 +868,42 @@ function animate() {
                 }
             }
             
+            // Tallenna edellinen animaatio
+            if (!player.currentAnimation) {
+                player.currentAnimation = targetAnimationName;
+            }
+            
             // Vaihda animaatiota vain jos se on eri kuin nykyinen
-            if (targetAnimationName && player.actions[targetAnimationName]) {
+            if (targetAnimationName && player.actions[targetAnimationName] && targetAnimationName !== player.currentAnimation) {
                 const targetAction = player.actions[targetAnimationName];
+                const previousAction = player.actions[player.currentAnimation];
                 
-                // Jos tämä animaatio ei ole jo käynnissä, vaihda siihen
-                if (!targetAction.isRunning()) {
-                    // Pysäytä kaikki muut animaatiot
-                    Object.keys(player.actions).forEach(name => {
-                        if (name !== targetAnimationName && player.actions[name].isRunning()) {
-                            player.actions[name].fadeOut(0.2);
-                        }
-                    });
-                    
-                    // Käynnistä uusi animaatio
-                    targetAction.reset().fadeIn(0.2).play();
+                // Pysäytä edellinen animaatio
+                if (previousAction && previousAction.isRunning()) {
+                    previousAction.fadeOut(0.2);
+                }
+                
+                // Pysäytä kaikki muut (varmuuden vuoksi)
+                Object.keys(player.actions).forEach(name => {
+                    if (name !== targetAnimationName && player.actions[name].isRunning()) {
+                        player.actions[name].fadeOut(0.1);
+                    }
+                });
+                
+                // Käynnistä uusi animaatio
+                targetAction.reset().fadeIn(0.2).play();
+                player.currentAnimation = targetAnimationName;
+            }
+            // Varmista että nykyinen animaatio on käynnissä
+            else if (targetAnimationName && player.actions[targetAnimationName]) {
+                const currentAction = player.actions[targetAnimationName];
+                if (!currentAction.isRunning()) {
+                    currentAction.reset().play();
                 }
             }
         }
     }
     
-    // Kävelyanimaatio vanhoille geometrioille (fallback)
-    if (player.leftLeg && isMoving && playerState.onGround) {
-        const walkCycle = Date.now() * 0.01;
-        player.leftLeg.rotation.x = Math.sin(walkCycle) * 0.4;
-        player.rightLeg.rotation.x = Math.sin(walkCycle + Math.PI) * 0.4;
-        player.leftArm.rotation.x = Math.sin(walkCycle + Math.PI) * 0.3;
-        player.rightArm.rotation.x = Math.sin(walkCycle) * 0.3;
-        player.position.y = 0.5 + Math.abs(Math.sin(walkCycle * 2)) * 0.05;
-    } else if (player.leftLeg) {
-        player.leftLeg.rotation.x *= 0.9;
-        player.rightLeg.rotation.x *= 0.9;
-        player.leftArm.rotation.x *= 0.9;
-        player.rightArm.rotation.x *= 0.9;
-    }
-    
-    // 🔫 ASEEN PULSSI-ANIMAATIO
-    if (player.weapon && player.weapon.core) {
-        const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 1.0;
-        player.weapon.core.material.emissiveIntensity = pulse;
-        player.weapon.core.scale.setScalar(0.8 + pulse * 0.2);
-    }
-
     // Hyppy
     if (keys.jump && playerState.onGround) {
         playerState.velocity.y = playerState.jumpPower;
@@ -1121,49 +989,6 @@ function animate() {
             alert('Vihollinen sai sinut kiinni! Pisteet: ' + gameState.score);
             location.reload();
         }
-    });
-
-    // Päivitä ammukset
-    projectiles.forEach((projectile, projIndex) => {
-        projectile.position.add(projectile.velocity);
-        projectile.life--;
-        
-        // Poista vanhat ammukset
-        if (projectile.life <= 0) {
-            scene.remove(projectile);
-            projectiles.splice(projIndex, 1);
-            return;
-        }
-        
-        // Tarkista törmäys vihollisiin
-        enemies.forEach((enemy, enemyIndex) => {
-            if (checkCollision(projectile, enemy)) {
-                // Luo räjähdysefekti
-                createExplosion(enemy.position.clone());
-                
-                // Poista vihollinen ja ammus
-                scene.remove(enemy);
-                enemies.splice(enemyIndex, 1);
-                scene.remove(projectile);
-                projectiles.splice(projIndex, 1);
-                
-                // Lisää pisteitä
-                gameState.score += 50;
-                gameState.kills++;
-                updateScore();
-                
-                // PIILOTETTU: Luo uusi vihollinen
-                // createEnemy();
-            }
-        });
-        
-        // Tarkista törmäys esteisiin (ammukset pomppii pois)
-        obstacles.forEach((obstacle) => {
-            if (checkCollision(projectile, obstacle)) {
-                scene.remove(projectile);
-                projectiles.splice(projIndex, 1);
-            }
-        });
     });
 
     // Kamera seuraa pelaajaa - Third Person Shooter tyyli
