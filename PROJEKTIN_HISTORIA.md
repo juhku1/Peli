@@ -793,6 +793,9 @@ git push -u origin main
 - `f870377` - "Lisätty viholliset jotka jahtaavat pelaajaa" ⭐ (vihollisten toteutus)
 - `1e17f06` - "Dokumentoitu vihollisten lisäys projektin historiaan"
 - `6caa084` - "Parannettu pelin visuaalinen ilme: robottipelaaja, teksturoitu maasto, puut, kivet, parempi valaistus ja partikkelit" ⭐⭐ (suuri visuaalinen päivitys)
+- `5abedd8` - "Päivitetty commit-historia: lisätty visuaalisen päivityksen commit-numero"
+- `33ea2d4` - "Lisätty ammunta: hiiren klikkaus ampuu, viholliset tuhoutuvat osuessa, räjähdysefektit" ⭐ (ammuntamekaniikka)
+- `d626f6e` - "Korjattu ammuksen suunta ja lisätty ammusraja (30), reload (R-näppäin, 1.5s), shoot cooldown" ⭐ (ammuntaparannukset)
 
 ---
 
@@ -965,13 +968,111 @@ const head = new THREE.Mesh(
 - ✅ Maisema tuo syvyyttä
 - ✅ Partikkelit antavat välitöntä palautetta
 
-**Git Commit:**
-- Odottaa: "Parannettu pelin visuaalinen ilme: robottipelaaja, teksturoitu maasto, puut, kivet, parempi valaistus ja partikkelit"
+---
+
+### Vaihe 7: Ammuntamekaniikka
+
+#### ❓ Kysymys #7
+> "Miten tämän saa ampumaan?"
+
+#### 💡 Vastaus #7
+**Toimenpide:** Täydellisen ammuntajärjestelmän lisääminen
+
+**Toteutetut ominaisuudet:**
+
+**1. Perusammunta 🎯**
+- ✅ Hiiren vasen nappi ampuu
+- ✅ Siniset hehkuvat ammukset
+- ✅ Ammukset lähtevät pelaajan liikkumissuuntaan
+- ✅ Jos ei liiku, ampuu eteenpäin
+- ✅ Ammukset tuhoutuvat 100 framen jälkeen
+
+**2. Ammusrajaus 🔫**
+- ✅ Maksimi 30 ammusta
+- ✅ Ammukset vähenevät ampuessa
+- ✅ Näyttö: "Ammukset: 30/30"
+- ✅ Ei voi ampua jos ammukset loppu
+
+**3. Latausmekaniikka ⚡**
+- ✅ R-näppäin lataa ammukset
+- ✅ 1.5 sekunnin latausaika
+- ✅ Ei voi ampua latauksen aikana
+- ✅ Näyttö: "Ladataan..." latauksen aikana
+- ✅ Automaattinen lataus kun ammukset loppuu
+
+**4. Shoot Cooldown ⏱️**
+- ✅ 5 framen cooldown ampumisen välillä
+- ✅ Estää roskaammunnan
+- ✅ Sujuvampi pelattavuus
+
+**5. Viholliset ja Tuhoutuminen 💥**
+- ✅ Ammukset tuhoavat vihollisia
+- ✅ Magentanväriset räjähdyspartikkelit (20 kpl)
+- ✅ +50 pistettä per vihollinen
+- ✅ Uusi vihollinen spawnataan tilalle
+- ✅ Ammukset pomppii pois esteistä
+
+**6. Suunnan Korjaus 🔧**
+- ✅ Korjattu: ammukset eivät mene enää ylöspäin
+- ✅ Ammukset seuraavat liikkumissuuntaa (WASD)
+- ✅ Vaakasuora lento (Y = 0)
+- ✅ Intuitiivinen tähtäys
+
+**Tekninen toteutus:**
+
+```javascript
+// Ammusraja ja reload
+const gameState = {
+    ammo: 30,
+    maxAmmo: 30,
+    reloading: false,
+    canShoot: true,
+    shootCooldown: 0
+};
+
+// Lataus
+function reload() {
+    gameState.reloading = true;
+    setTimeout(() => {
+        gameState.ammo = gameState.maxAmmo;
+        gameState.reloading = false;
+    }, 1500);
+}
+
+// Ammunta liikkumissuuntaan
+const moveDir = new THREE.Vector3();
+if (keys.forward) moveDir.z -= 1;
+if (keys.backward) moveDir.z += 1;
+if (keys.left) moveDir.x -= 1;
+if (keys.right) moveDir.x += 1;
+if (moveDir.length() > 0) {
+    direction.copy(moveDir.normalize());
+}
+```
+
+**Muokatut tiedostot:**
+- `game.js` - Täydellinen ammuntajärjestelmä (+100 riviä)
+- `index.html` - Ammusnäyttö ja R-näppäin ohje
+
+**Pistejärjestelmä:**
+- Kolikko: +10 pistettä
+- Vihollisen tuhoaminen: +50 pistettä
+
+**Tulokset:**
+- ✅ Peli on nyt täysimittainen shooter
+- ✅ Strateginen resurssinhallinta (ammukset)
+- ✅ Dynaaminen toiminta
+- ✅ Parempi haaste
+- ✅ Ammunta toimii intuitiivisesti
+
+**Git Commits:**
+- `33ea2d4` - "Lisätty ammunta: hiiren klikkaus ampuu, viholliset tuhoutuvat osuessa, räjähdysefektit"
+- `d626f6e` - "Korjattu ammuksen suunta ja lisätty ammusraja (30), reload (R-näppäin, 1.5s), shoot cooldown"
 
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 1.3  
+**Versio:** 1.4  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
 
 ---
