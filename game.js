@@ -35,7 +35,9 @@ const keys = {
     left: false,
     right: false,
     jump: false,
-    shoot: false
+    shoot: false,
+    run: false,
+    duck: false
 };
 
 // Ammukset
@@ -226,7 +228,9 @@ const playerState = {
     onGround: true,
     jumpPower: 0.3,
     gravity: -0.02,
-    moveSpeed: 0.15
+    moveSpeed: 0.15,
+    runSpeed: 0.25,  // Juoksunopeus
+    duckSpeed: 0.08  // Kyykistysnopeus
 };
 
 // 🌐 SCI-FI GRID-LATTIA
@@ -545,6 +549,14 @@ document.addEventListener('keydown', (e) => {
         case 'KeyR':
             reload();
             break;
+        case 'ShiftLeft':
+        case 'ShiftRight':
+            keys.run = true;
+            break;
+        case 'ControlLeft':
+        case 'ControlRight':
+            keys.duck = true;
+            break;
     }
 });
 
@@ -568,6 +580,14 @@ document.addEventListener('keyup', (e) => {
             break;
         case 'Space':
             keys.jump = false;
+            break;
+        case 'ShiftLeft':
+        case 'ShiftRight':
+            keys.run = false;
+            break;
+        case 'ControlLeft':
+        case 'ControlRight':
+            keys.duck = false;
             break;
     }
 });
@@ -629,9 +649,10 @@ function shoot() {
     }
     
     const projectileGeometry = new THREE.SphereGeometry(0.15, 8, 8);
-    const projectileMaterial = new THREE.MeshBasicMaterial({ 
+    const projectileMaterial = new THREE.MeshStandardMaterial({ 
         color: 0x00ffff,
-        emissive: 0x00ffff
+        emissive: 0x00ffff,
+        emissiveIntensity: 1.0
     });
     const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
     
@@ -872,30 +893,38 @@ function animate() {
     const forward = new THREE.Vector3(-Math.sin(mouse.yaw), 0, -Math.cos(mouse.yaw));
     const right = new THREE.Vector3(Math.cos(mouse.yaw), 0, -Math.sin(mouse.yaw));
     
+    // Valitse nopeus: kyykistys < kävely < juoksu
+    let currentSpeed = playerState.moveSpeed;
+    if (keys.duck) {
+        currentSpeed = playerState.duckSpeed;
+    } else if (keys.run) {
+        currentSpeed = playerState.runSpeed;
+    }
+    
     let isMoving = false;
     let moveDirection = new THREE.Vector3(0, 0, 0);
     
     if (keys.forward) {
-        player.position.x += forward.x * playerState.moveSpeed;
-        player.position.z += forward.z * playerState.moveSpeed;
+        player.position.x += forward.x * currentSpeed;
+        player.position.z += forward.z * currentSpeed;
         moveDirection.add(forward);
         isMoving = true;
     }
     if (keys.backward) {
-        player.position.x -= forward.x * playerState.moveSpeed;
-        player.position.z -= forward.z * playerState.moveSpeed;
+        player.position.x -= forward.x * currentSpeed;
+        player.position.z -= forward.z * currentSpeed;
         moveDirection.sub(forward);
         isMoving = true;
     }
     if (keys.left) {
-        player.position.x -= right.x * playerState.moveSpeed;
-        player.position.z -= right.z * playerState.moveSpeed;
+        player.position.x -= right.x * currentSpeed;
+        player.position.z -= right.z * currentSpeed;
         moveDirection.sub(right);
         isMoving = true;
     }
     if (keys.right) {
-        player.position.x += right.x * playerState.moveSpeed;
-        player.position.z += right.z * playerState.moveSpeed;
+        player.position.x += right.x * currentSpeed;
+        player.position.z += right.z * currentSpeed;
         moveDirection.add(right);
         isMoving = true;
     }
@@ -906,7 +935,7 @@ function animate() {
         player.rotation.y = targetAngle;
     }
     
-    // 🎬 ANIMAATIO
+    // 🎬 ANIMAATIO - Kattava systeemi kaikille 18 animaatiolle
     // Päivitä 3D-mallin animaatiot
     if (playerMixer) {
         const delta = clock.getDelta();
@@ -914,36 +943,72 @@ function animate() {
         
         // Vaihda animaatio tilan mukaan
         if (player.actions) {
-            const actionNames = Object.keys(player.actions);
+            // Valitse oikea animaatio PRIORITEETIN mukaan
+            let targetAnimationName = null;
             
-            // Pysäytä kaikki
-            actionNames.forEach(name => {
-                if (player.actions[name].isRunning()) {
-                    player.actions[name].stop();
+            // 1. KUOLEMA (korkein prioriteetti - jos toteutettu)
+            if (gameState.gameOver) {
+                targetAnimationName = 'CharacterArmature|Death';
+            }
+            // 2. KYYKISTYS
+            else if (keys.duck && playerState.onGround) {
+                targetAnimationName = 'CharacterArmature|Duck';
+            }
+            // 3. HYPPY
+            else if (!playerState.onGround) {
+                // Nouseva hyppy
+                if (playerState.velocity.y > 0) {
+                    targetAnimationName = 'CharacterArmature|Jump';
                 }
-            });
-            
-            // Valitse oikea animaatio
-            let currentAction = null;
-            
-            if (gameState.isShooting) {
-                // Ampuu - etsi shoot/fire/attack animaatio (KORKEIN PRIORITEETTI)
-                currentAction = player.actions['TPose'] || player.actions['tpose'] || player.actions['Shoot'] || player.actions['shoot'] || player.actions['Fire'] || player.actions['fire'] || player.actions['Attack'] || player.actions['attack'];
-            } else if (!playerState.onGround) {
-                // Hyppää - etsi jump animaatio
-                currentAction = player.actions['Jump'] || player.actions['jump'] || actionNames[2];
-            } else if (isMoving) {
-                // Liikkuu - etsi walk/run animaatio
-                currentAction = player.actions['Walk'] || player.actions['walk'] || player.actions['Run'] || player.actions['run'] || actionNames[1];
-            } else {
-                // Idle - etsi idle animaatio
-                currentAction = player.actions['Idle'] || player.actions['idle'] || actionNames[0];
+                // Laskeutuminen
+                else {
+                    targetAnimationName = 'CharacterArmature|Jump_Land';
+                    if (!player.actions[targetAnimationName]) {
+                        targetAnimationName = 'CharacterArmature|Jump_Idle';
+                    }
+                }
+            }
+            // 4. LIIKE + AMPUMINEN
+            else if (isMoving && gameState.isShooting) {
+                targetAnimationName = 'CharacterArmature|Run_Gun_Shoot';
+            }
+            // 5. JUOKSU (Shift painettuna)
+            else if (isMoving && keys.run) {
+                targetAnimationName = 'CharacterArmature|Run_Gun';
+                if (!player.actions[targetAnimationName]) {
+                    targetAnimationName = 'CharacterArmature|Run';
+                }
+            }
+            // 6. KÄVELY
+            else if (isMoving) {
+                targetAnimationName = 'CharacterArmature|Walk_Gun';
+                if (!player.actions[targetAnimationName]) {
+                    targetAnimationName = 'CharacterArmature|Walk';
+                }
+            }
+            // 7. IDLE (paikallaan)
+            else {
+                targetAnimationName = 'CharacterArmature|Idle_Gun';
+                if (!player.actions[targetAnimationName]) {
+                    targetAnimationName = 'CharacterArmature|Idle';
+                }
             }
             
-            // Tarkista että currentAction on olemassa ja sillä on isRunning-metodi
-            if (currentAction && typeof currentAction.isRunning === 'function') {
-                if (!currentAction.isRunning()) {
-                    currentAction.reset().play();
+            // Vaihda animaatiota vain jos se on eri kuin nykyinen
+            if (targetAnimationName && player.actions[targetAnimationName]) {
+                const targetAction = player.actions[targetAnimationName];
+                
+                // Jos tämä animaatio ei ole jo käynnissä, vaihda siihen
+                if (!targetAction.isRunning()) {
+                    // Pysäytä kaikki muut animaatiot
+                    Object.keys(player.actions).forEach(name => {
+                        if (name !== targetAnimationName && player.actions[name].isRunning()) {
+                            player.actions[name].fadeOut(0.2);
+                        }
+                    });
+                    
+                    // Käynnistä uusi animaatio
+                    targetAction.reset().fadeIn(0.2).play();
                 }
             }
         }

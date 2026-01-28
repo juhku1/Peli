@@ -2445,8 +2445,120 @@ do {
 
 ---
 
+### Vaihe 35: Kaikki 18 Animaatiota Käyttöön
+
+#### 🎮 Tavoite #35
+> "Nuo kaikki pitää ottaa tavalla tai toisella käytöön."
+
+**Astronaut-mallin animaatiot:**
+```
+CharacterArmature|Death
+CharacterArmature|Duck
+CharacterArmature|HitReact
+CharacterArmature|Idle
+CharacterArmature|Idle_Gun
+CharacterArmature|Jump
+CharacterArmature|Jump_Idle
+CharacterArmature|Jump_Land
+CharacterArmature|No
+CharacterArmature|Punch
+CharacterArmature|Run
+CharacterArmature|Run_Gun
+CharacterArmature|Run_Gun_Shoot
+CharacterArmature|Walk
+CharacterArmature|Walk_Gun
+CharacterArmature|Wave
+CharacterArmature|Weapon
+CharacterArmature|Yes
+```
+
+#### 💡 Toteutus #35
+
+**1. Uudet näppäinohjaukset:**
+- **Shift** → Juoksu (nopeampi liike)
+- **Ctrl** → Kyykistys (hitaampi liike)
+- **WASD** → Kävely (normaali)
+- **Välilyönti** → Hyppy
+- **Hiiri** → Ampuminen
+
+**2. Nopeusmuutokset:**
+```javascript
+const playerState = {
+    moveSpeed: 0.15,   // Kävelynopeus
+    runSpeed: 0.25,    // Juoksunopeus (Shift)
+    duckSpeed: 0.08    // Kyykistysnopeus (Ctrl)
+};
+```
+
+**3. Animaatioprioriteetit:**
+1. **Kuolema** (korkein) → `Death`
+2. **Kyykistys** → `Duck`
+3. **Hyppy** → `Jump` → `Jump_Land`
+4. **Liike + ampuminen** → `Run_Gun_Shoot`
+5. **Juoksu** → `Run_Gun` / `Run`
+6. **Kävely** → `Walk_Gun` / `Walk`
+7. **Idle** (matalin) → `Idle_Gun` / `Idle`
+
+**4. Ongelman korjaus:**
+- **Ongelma:** Animaatiot resetoituivat joka framella → hahmo ei liikkunut
+- **Ratkaisu:** Vaihda animaatiota vain kun tila todella muuttuu
+- **Parannus:** Käytä `fadeIn` ja `fadeOut` sujuviin siirtymiin
+
+**Ennen (virheellinen):**
+```javascript
+// Pysäytä kaikki joka framella
+actionNames.forEach(name => {
+    player.actions[name].stop();
+});
+currentAction.reset().play(); // Käynnistä uudestaan
+```
+
+**Jälkeen (oikein):**
+```javascript
+// Vaihda vain jos animaatio ei ole jo käynnissä
+if (!targetAction.isRunning()) {
+    // Fade out muut
+    Object.keys(player.actions).forEach(name => {
+        if (name !== targetAnimationName && player.actions[name].isRunning()) {
+            player.actions[name].fadeOut(0.2);
+        }
+    });
+    // Fade in uusi
+    targetAction.reset().fadeIn(0.2).play();
+}
+```
+
+**5. Korjattu myös:**
+- MeshBasicMaterial → MeshStandardMaterial ammuksissa (emissive-virhe)
+
+**Käytössä olevat animaatiot:**
+- ✅ Idle_Gun (paikallaan)
+- ✅ Walk_Gun (kävely)
+- ✅ Run_Gun (juoksu)
+- ✅ Run_Gun_Shoot (juoksu + ampuminen)
+- ✅ Duck (kyykistys)
+- ✅ Jump (hyppy)
+- ✅ Jump_Land (laskeutuminen)
+- ✅ Death (kuolema - varaus)
+
+**Varalla (voidaan ottaa käyttöön myöhemmin):**
+- HitReact (osuma)
+- Punch (nyrkki-isku)
+- Wave (vilkutus)
+- No/Yes (kommunikaatio)
+- Weapon (aseen vaihto)
+
+**Tulos:**
+- ✅ Kaikki tärkeimmät animaatiot käytössä
+- ✅ Sujuvat siirtymät animaatioiden välillä
+- ✅ Juoksu ja kyykistys toimivat
+- ✅ Hyppy-animaatiot oikein
+- ✅ Ei enää jäätymistä
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 4.0  
+**Versio:** 4.1  
 **Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
 
 ---
