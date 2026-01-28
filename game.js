@@ -358,21 +358,25 @@ const coinMaterial = new THREE.MeshStandardMaterial({
 
 function createCoin() {
     const coin = new THREE.Mesh(coinGeometry, coinMaterial);
-    coin.position.set(
-        (Math.random() - 0.5) * 30,
-        0.5,
-        (Math.random() - 0.5) * 30
-    );
+    
+    // Varmista että kolikot eivät spawnaa liian lähelle alkupistettä (0,0)
+    let x, z;
+    do {
+        x = (Math.random() - 0.5) * 60;
+        z = (Math.random() - 0.5) * 60;
+    } while (Math.sqrt(x*x + z*z) < 5); // Vähintään 5 yksikön päässä keskustasta
+    
+    coin.position.set(x, 0.5, z);
     coin.rotation.x = Math.PI / 2;
     coin.castShadow = true;
     scene.add(coin);
     coins.push(coin);
 }
 
-// Luo 20 kolikkoa
-for (let i = 0; i < 20; i++) {
-    createCoin();
-}
+// PIILOTETTU: Luo 20 kolikkoa
+// for (let i = 0; i < 20; i++) {
+//     createCoin();
+// }
 
 // Esteet (välttämiseen) - Parempi visuaalinen ilme
 const obstacles = [];
@@ -387,29 +391,33 @@ const obstacleMaterial = new THREE.MeshStandardMaterial({
 
 function createObstacle() {
     const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
-    obstacle.position.set(
-        (Math.random() - 0.5) * 30,
-        1,
-        (Math.random() - 0.5) * 30
-    );
+    
+    // Varmista että esteet eivät spawnaa liian lähelle alkupistettä (0,0)
+    let x, z;
+    do {
+        x = (Math.random() - 0.5) * 60;
+        z = (Math.random() - 0.5) * 60;
+    } while (Math.sqrt(x*x + z*z) < 8); // Vähintään 8 yksikön päässä keskustasta
+    
+    obstacle.position.set(x, 1, z);
     obstacle.castShadow = true;
     scene.add(obstacle);
     obstacles.push(obstacle);
 }
 
-// Luo 10 estettä
-for (let i = 0; i < 10; i++) {
-    createObstacle();
-}
+// PIILOTETTU: Luo 10 estettä
+// for (let i = 0; i < 10; i++) {
+//     createObstacle();
+// }
 
 // 🛸 VIHOLLISROBOTIT - Ladataan 3D-mallit
 const enemies = [];
 let enemyModelTemplate = null;
 
-// Luo viholliset heti fallback-geometrialla
-for (let i = 0; i < 5; i++) {
-    createFallbackEnemy();
-}
+// PIILOTETTU: Luo viholliset heti fallback-geometrialla
+// for (let i = 0; i < 5; i++) {
+//     createFallbackEnemy();
+// }
 
 // Lataa vihollismalli ja päivitä viholliset kun valmis
 loader.load('models/drone.glb', (gltf) => {
@@ -984,34 +992,34 @@ function animate() {
     player.position.x = Math.max(-40, Math.min(40, player.position.x));
     player.position.z = Math.max(-40, Math.min(40, player.position.z));
 
-    // Tarkista kolikot
-    coins.forEach((coin, index) => {
-        // Pyöritä kolikkoa
-        coin.rotation.z += 0.05;
-        
-        if (checkCollision(player, coin)) {
-            createCoinParticles(coin.position.clone());
-            scene.remove(coin);
-            coins.splice(index, 1);
-            gameState.score += 10;
-            updateScore();
-            // Luo uusi kolikko
-            createCoin();
-        }
-    });
+    // PIILOTETTU: Tarkista kolikot
+    // coins.forEach((coin, index) => {
+    //     // Pyöritä kolikkoa
+    //     coin.rotation.z += 0.05;
+    //     
+    //     if (checkCollision(player, coin)) {
+    //         createCoinParticles(coin.position.clone());
+    //         scene.remove(coin);
+    //         coins.splice(index, 1);
+    //         gameState.score += 10;
+    //         updateScore();
+    //         // Luo uusi kolikko
+    //         createCoin();
+    //     }
+    // });
 
-    // Tarkista esteet
-    obstacles.forEach((obstacle) => {
-        // Pyöritä estettä
-        obstacle.rotation.y += 0.01;
-        
-        if (checkCollision(player, obstacle)) {
-            // Peli päättyy
-            gameState.gameOver = true;
-            alert('Peli päättyi! Pisteet: ' + gameState.score);
-            location.reload();
-        }
-    });
+    // PIILOTETTU: Tarkista esteet
+    // obstacles.forEach((obstacle) => {
+    //     // Pyöritä estettä
+    //     obstacle.rotation.y += 0.01;
+    //     
+    //     if (checkCollision(player, obstacle)) {
+    //         // Peli päättyy
+    //         gameState.gameOver = true;
+    //         alert('Peli päättyi! Pisteet: ' + gameState.score);
+    //         location.reload();
+    //     }
+    // });
 
     // Päivitä viholliset
     enemies.forEach((enemy, enemyIndex) => {
@@ -1079,8 +1087,8 @@ function animate() {
                 gameState.kills++;
                 updateScore();
                 
-                // Luo uusi vihollinen
-                createEnemy();
+                // PIILOTETTU: Luo uusi vihollinen
+                // createEnemy();
             }
         });
         

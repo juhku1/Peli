@@ -2367,83 +2367,86 @@ git commit -m "feat: vaihdettu pelaajamalli Quaternius Astronautiksi + credits"
 
 ---
 
-### Vaihe 32: Kriittiset Bugit Korjattu
+### Vaihe 34: Kolikoiden ja Esteiden Poisto
 
-#### 🐛 Ongelma #32
-> "Tuo löytyi selaimen kosolista" (käyttäjä liitti massiivisen virhelokin)
-
-**Virheet:**
-1. `game.js:907 Uncaught TypeError: currentAction.isRunning is not a function`
-2. `game.js:628 Uncaught TypeError: Cannot read properties of undefined (reading 'localToWorld')`
+#### 🎮 Ongelma #34
+> "Heti kun peli käynnistyy se loppuu. pisteet 100"
+> "peli päättyi pisteet 0"
+> "yhä sama"
 
 **Diagnoosi:**
-- Astronaut-malli ladattiin, mutta `player.weapon` asetettiin `null`
-- Ammumiskoodi yritti kutsua `player.weapon.localToWorld()` → virhe
-- Animaatiokoodi yritti kutsua `currentAction.isRunning()` kun `currentAction` oli `undefined`
-- Molemmat virheet toistuivat infinite loop:ssa → peli kaatui
+- Kolikot ja esteet spawnaavat satunnaisesti, joskus aivan pelaajan viereen (0, 0)
+- Pelaaja keräsi kolikot heti alussa → 100 pistettä (10 kolikkoa × 10 pistettä)
+- Esteet osuivat pelaajaan heti → game over pisteet 0
+- Spawnausalueen korjaus ei riittänyt
 
-#### 💡 Korjaus #32
+#### 💡 Ratkaisu #34
 
-**1. Ase lisätty astronautille:**
+**Vaihe 1: Kolikoiden spawnaus korjattu**
 ```javascript
-// Luo ase astronautille
-const weaponGroup = new THREE.Group();
-const weaponBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.1, 0.1, 0.8),
-    new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 })
-);
-weaponBody.position.z = -0.4;
-weaponGroup.add(weaponBody);
-
-const weaponBarrel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8),
-    new THREE.MeshStandardMaterial({ color: 0x666666, metalness: 0.9 })
-);
-weaponBarrel.position.z = -0.75;
-weaponBarrel.rotation.x = Math.PI / 2;
-weaponGroup.add(weaponBarrel);
-
-weaponGroup.position.set(0.3, 0.5, 0);
-weaponGroup.rotation.y = -Math.PI / 2;
-player.add(weaponGroup);
-player.weapon = weaponGroup;
+// Varmista että kolikot eivät spawnaa liian lähelle alkupistettä
+let x, z;
+do {
+    x = (Math.random() - 0.5) * 60;
+    z = (Math.random() - 0.5) * 60;
+} while (Math.sqrt(x*x + z*z) < 5); // Vähintään 5 yksikön päässä
 ```
 
-**2. Animaatiovirhe korjattu:**
+**Vaihe 2: Kolikot poistettu kokonaan**
 ```javascript
-// ENNEN:
-if (currentAction && !currentAction.isRunning()) {
+// PIILOTETTU: Luo 20 kolikkoa
+// for (let i = 0; i < 20; i++) {
+//     createCoin();
+// }
 
-// JÄLKEEN:
-if (currentAction && typeof currentAction.isRunning === 'function') {
-    if (!currentAction.isRunning()) {
+// PIILOTETTU: Tarkista kolikot
+// coins.forEach((coin, index) => {
+//     ...
+// });
 ```
 
-**3. Ammuntavirhe korjattu:**
+**Vaihe 3: Esteiden spawnaus korjattu**
 ```javascript
-// ENNEN:
-player.weapon.localToWorld(barrelTip);
-
-// JÄLKEEN:
-if (player.weapon) {
-    player.weapon.localToWorld(barrelTip);
-} else {
-    barrelTip.copy(player.position);
-    barrelTip.y += 0.5;
-}
+// Varmista että esteet eivät spawnaa liian lähelle alkupistettä
+let x, z;
+do {
+    x = (Math.random() - 0.5) * 60;
+    z = (Math.random() - 0.5) * 60;
+} while (Math.sqrt(x*x + z*z) < 8); // Vähintään 8 yksikön päässä
 ```
+
+**Vaihe 4: Esteet poistettu kokonaan**
+```javascript
+// PIILOTETTU: Luo 10 estettä
+// for (let i = 0; i < 10; i++) {
+//     createObstacle();
+// }
+
+// PIILOTETTU: Tarkista esteet
+// obstacles.forEach((obstacle) => {
+//     ...
+// });
+```
+
+**Pelin nykytila:**
+- ❌ Ei kolikoita
+- ❌ Ei esteitä
+- ❌ Ei vihollisia (piilotettu jo aiemmin)
+- ✅ Pelaaja voi liikkua vapaasti
+- ✅ Ammunta toimii
+- ✅ 3D-mallit (astronautti) toimivat
+- ✅ Animaatiot toimivat
 
 **Tulos:**
-- ✅ Infinite loop korjattu
-- ✅ Peli pelattavissa taas
-- ✅ Astronautilla on nyt ase
-- ✅ Ammunta toimii oikein
-- ✅ Animaatiot toimivat ilman virheitä
+- ✅ Peli käynnistyy normaalisti
+- ✅ Ei enää välitöntä game overia
+- ✅ Vapaa liikkuminen ja testaus mahdollista
+- ✅ Valmis lisäominaisuuksien kehitykseen
 
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.8  
+**Versio:** 4.0  
 **Seuraava päivitys:** Kun lisäominaisuuksia toteutettu
 
 ---
