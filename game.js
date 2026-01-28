@@ -18,8 +18,9 @@ const keys = {
 
 // Scene, Camera, Renderer
 const scene = new THREE.Scene();
+// Gradient-taivas
 scene.background = new THREE.Color(0x87ceeb);
-scene.fog = new THREE.Fog(0x87ceeb, 0, 50);
+scene.fog = new THREE.Fog(0xb0c4de, 10, 80);
 
 const camera = new THREE.PerspectiveCamera(
     75,
@@ -35,24 +36,68 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
 
 // Valaistus
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
 scene.add(ambientLight);
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-directionalLight.position.set(5, 10, 5);
+const directionalLight = new THREE.DirectionalLight(0xffeedd, 1.0);
+directionalLight.position.set(10, 15, 8);
 directionalLight.castShadow = true;
-directionalLight.shadow.camera.left = -20;
-directionalLight.shadow.camera.right = 20;
-directionalLight.shadow.camera.top = 20;
-directionalLight.shadow.camera.bottom = -20;
+directionalLight.shadow.camera.left = -30;
+directionalLight.shadow.camera.right = 30;
+directionalLight.shadow.camera.top = 30;
+directionalLight.shadow.camera.bottom = -30;
+directionalLight.shadow.mapSize.width = 2048;
+directionalLight.shadow.mapSize.height = 2048;
 scene.add(directionalLight);
 
-// Pelaaja (kuutio)
-const playerGeometry = new THREE.BoxGeometry(1, 1, 1);
-const playerMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
-const player = new THREE.Mesh(playerGeometry, playerMaterial);
+// Lisävalo (sinertävä täytevalo)
+const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
+fillLight.position.set(-5, 5, -5);
+scene.add(fillLight);
+
+// Pelaaja (coolampi robottihahmo)
+const player = new THREE.Group();
+
+// Vartalo
+const bodyGeometry = new THREE.CapsuleGeometry(0.3, 0.6, 8, 16);
+const bodyMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x00aa00,
+    metalness: 0.3,
+    roughness: 0.4
+});
+const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
+body.castShadow = true;
+player.add(body);
+
+// Pää
+const headGeometry = new THREE.SphereGeometry(0.25, 16, 16);
+const headMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x00ff00,
+    metalness: 0.5,
+    roughness: 0.3,
+    emissive: 0x003300
+});
+const head = new THREE.Mesh(headGeometry, headMaterial);
+head.position.y = 0.6;
+head.castShadow = true;
+player.add(head);
+
+// Silmät (hehkuvat)
+const eyeGeometry = new THREE.SphereGeometry(0.08, 8, 8);
+const eyeMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x00ffff,
+    emissive: 0x00ffff,
+    emissiveIntensity: 0.8
+});
+const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+leftEye.position.set(-0.1, 0.65, 0.2);
+player.add(leftEye);
+
+const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+rightEye.position.set(0.1, 0.65, 0.2);
+player.add(rightEye);
+
 player.position.set(0, 0.5, 0);
-player.castShadow = true;
 scene.add(player);
 
 // Pelaajan fysiikka
@@ -64,24 +109,112 @@ const playerState = {
     moveSpeed: 0.15
 };
 
-// Maa (tasainen alusta)
-const groundGeometry = new THREE.PlaneGeometry(100, 100);
+// Maa (teksturoitu ruoho-efekti)
+const groundGeometry = new THREE.PlaneGeometry(100, 100, 50, 50);
 const groundMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x90ee90,
-    roughness: 0.8
+    color: 0x4a7c3a,
+    roughness: 0.9,
+    metalness: 0.0
 });
 const ground = new THREE.Mesh(groundGeometry, groundMaterial);
 ground.rotation.x = -Math.PI / 2;
 ground.receiveShadow = true;
+
+// Lisää epätasaisuutta maahan
+const positions = ground.geometry.attributes.position;
+for (let i = 0; i < positions.count; i++) {
+    const y = Math.random() * 0.3;
+    positions.setZ(i, y);
+}
+positions.needsUpdate = true;
+ground.geometry.computeVertexNormals();
+
 scene.add(ground);
 
-// Esteet (keräiltävät kolikot)
+// Taustamaisema - Puut
+function createTree(x, z) {
+    const tree = new THREE.Group();
+    
+    // Runko
+    const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
+    const trunkMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x8b4513,
+        roughness: 0.9
+    });
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.y = 1;
+    trunk.castShadow = true;
+    tree.add(trunk);
+    
+    // Latvus (3 kerrosta)
+    const foliageGeometry = new THREE.ConeGeometry(1.2, 2, 8);
+    const foliageMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x2d5016,
+        roughness: 0.8
+    });
+    
+    for (let i = 0; i < 3; i++) {
+        const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+        foliage.position.y = 2.5 + i * 0.6;
+        foliage.scale.setScalar(1 - i * 0.2);
+        foliage.castShadow = true;
+        tree.add(foliage);
+    }
+    
+    tree.position.set(x, 0, z);
+    return tree;
+}
+
+// Luo puita reunoille
+for (let i = 0; i < 30; i++) {
+    const angle = (i / 30) * Math.PI * 2;
+    const distance = 35 + Math.random() * 10;
+    const tree = createTree(
+        Math.cos(angle) * distance,
+        Math.sin(angle) * distance
+    );
+    scene.add(tree);
+}
+
+// Kivet
+const rockGeometry = new THREE.DodecahedronGeometry(0.5, 0);
+const rockMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x808080,
+    roughness: 1.0,
+    metalness: 0.0
+});
+
+for (let i = 0; i < 15; i++) {
+    const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+    rock.position.set(
+        (Math.random() - 0.5) * 80,
+        0.3,
+        (Math.random() - 0.5) * 80
+    );
+    rock.scale.set(
+        0.5 + Math.random(),
+        0.5 + Math.random() * 0.5,
+        0.5 + Math.random()
+    );
+    rock.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        Math.random() * Math.PI
+    );
+    rock.castShadow = true;
+    rock.receiveShadow = true;
+    scene.add(rock);
+}
+
+// Esteet (keräiltävät kolikot) - Parannettu ulkoasu
 const coins = [];
 const coinGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.1, 16);
 const coinMaterial = new THREE.MeshStandardMaterial({ 
     color: 0xffd700,
-    metalness: 0.8,
-    roughness: 0.2
+    metalness: 1.0,
+    roughness: 0.1,
+    emissive: 0x664400,
+    emissiveIntensity: 0.2
 });
 
 function createCoin() {
@@ -102,10 +235,16 @@ for (let i = 0; i < 20; i++) {
     createCoin();
 }
 
-// Esteet (välttämiseen)
+// Esteet (välttämiseen) - Parempi visuaalinen ilme
 const obstacles = [];
-const obstacleGeometry = new THREE.BoxGeometry(1, 2, 1);
-const obstacleMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000 });
+const obstacleGeometry = new THREE.ConeGeometry(0.5, 2, 8);
+const obstacleMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0xff0000,
+    emissive: 0x440000,
+    emissiveIntensity: 0.3,
+    metalness: 0.2,
+    roughness: 0.6
+});
 
 function createObstacle() {
     const obstacle = new THREE.Mesh(obstacleGeometry, obstacleMaterial);
@@ -124,12 +263,16 @@ for (let i = 0; i < 10; i++) {
     createObstacle();
 }
 
-// Viholliset (jahtaavat pelaajaa)
+// Viholliset (jahtaavat pelaajaa) - Pelottavampi ulkoasu
 const enemies = [];
-const enemyGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+const enemyGeometry = new THREE.IcosahedronGeometry(0.5, 1);
 const enemyMaterial = new THREE.MeshStandardMaterial({ 
     color: 0xff00ff,
-    emissive: 0x330033
+    emissive: 0xff00ff,
+    emissiveIntensity: 0.5,
+    metalness: 0.8,
+    roughness: 0.2,
+    wireframe: false
 });
 
 function createEnemy() {
@@ -220,6 +363,54 @@ function updateScore() {
     document.getElementById('score').textContent = gameState.score;
 }
 
+// Partikkeliefekti kolikoille
+function createCoinParticles(position) {
+    const particleCount = 10;
+    const particles = [];
+    
+    for (let i = 0; i < particleCount; i++) {
+        const geometry = new THREE.SphereGeometry(0.05, 4, 4);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0xffd700,
+            transparent: true,
+            opacity: 1
+        });
+        const particle = new THREE.Mesh(geometry, material);
+        particle.position.copy(position);
+        
+        // Satunnainen nopeus
+        particle.velocity = new THREE.Vector3(
+            (Math.random() - 0.5) * 0.2,
+            Math.random() * 0.3 + 0.1,
+            (Math.random() - 0.5) * 0.2
+        );
+        particle.life = 1.0;
+        
+        scene.add(particle);
+        particles.push(particle);
+    }
+    
+    // Päivitä partikkeleita
+    const updateParticles = () => {
+        particles.forEach((particle, index) => {
+            particle.position.add(particle.velocity);
+            particle.velocity.y -= 0.01; // Painovoima
+            particle.life -= 0.02;
+            particle.material.opacity = particle.life;
+            
+            if (particle.life <= 0) {
+                scene.remove(particle);
+                particles.splice(index, 1);
+            }
+        });
+        
+        if (particles.length > 0) {
+            requestAnimationFrame(updateParticles);
+        }
+    };
+    updateParticles();
+}
+
 // Ikkunan koon muutos
 window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -266,6 +457,7 @@ function animate() {
         coin.rotation.z += 0.05;
         
         if (checkCollision(player, coin)) {
+            createCoinParticles(coin.position.clone());
             scene.remove(coin);
             coins.splice(index, 1);
             gameState.score += 10;

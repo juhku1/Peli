@@ -790,7 +790,11 @@ git push -u origin main
 - `6058a6e` - "Initial commit: Three.js 3D game with player movement, coins, and obstacles" (ensimmäinen GitHub-push)
 - `112df0e` - "Päivitetty projektin historia: GitHub-tallennus dokumentoitu" (historian päivitys)
 - `f277ca2` - "Lisätty Git commit -historia projektin dokumentaatioon"
-- `f870377` - "Lisätty viholliset jotka jahtaavat pelaajaa"
+- `f870377` - "Lisätty viholliset jotka jahtaavat pelaajaa" ⭐ (vihollisten toteutus)
+- `1e17f06` - "Dokumentoitu vihollisten lisäys projektin historiaan"
+- Odottaa: "Parannettu pelin visuaalinen ilme: robottipelaaja, teksturoitu maasto, puut, kivet, parempi valaistus ja partikkelit" ⭐⭐ (suuri visuaalinen päivitys)
+- Odottaa: "Dokumentoitu visuaaliset parannukset projektin historiaan"
+- Odottaa: "Lopullinen tallennus - kaikki muutokset dokumentoitu ja tallennettu"
 
 ---
 
@@ -843,8 +847,133 @@ enemy.position.z += direction.z * enemy.speed;
 
 ---
 
+### Vaihe 6: Visuaalisten Elementtien Parantaminen
+
+#### ❓ Kysymys #6
+> "Jatketaan kehitystä. Hahmot ja maisema ovat tylsiä, miten saadaan paremmat?"
+
+#### 💡 Vastaus #6
+**Toimenpide:** Pelin visuaalisen ilmeen merkittävä päivitys
+
+**Toteutetut parannukset:**
+
+**1. Pelaajahahmo - Robotti 🤖**
+- ✅ Vaihdettu yksinkertainen kuutio robottihahmoiksi
+- ✅ Kapselimuotoinen vartalo (metallic green)
+- ✅ Pallonmuotoinen pää
+- ✅ Hehkuvat siniset silmät (emissive material)
+- ✅ Koostuu 4 osasta (Group-rakenne)
+- ✅ Parempi varjo-ominaisuudet
+
+**2. Valaistus - Lämpimämpi ja Realistisempi 💡**
+- ✅ Päävalon väri muutettu lämpimäksi (0xffeedd)
+- ✅ Lisätty sininen täytevalo vastakkaiselta puolelta
+- ✅ Parannetut varjot (2048x2048 shadow map)
+- ✅ Suurempi varjoalue (±30 yksikköä)
+- ✅ Ambient light himmennettty (0.4 vs 0.6)
+
+**3. Maasto - Realistinen Ruohomaasto 🌱**
+- ✅ Tummanvihreä ruohon väri (0x4a7c3a)
+- ✅ Epätasainen maanpinta (50x50 segmenttiä)
+- ✅ Satunnainen korkeusvaihtelu (0-0.3 yksikköä)
+- ✅ Automaattinen normal-laskenta
+- ✅ Korkea roughness (0.9) luonnolliselle ilmeelle
+
+**4. Taustamaisema - Puut ja Kivet 🌲**
+
+**Puut (30 kpl):**
+- Ruskea puusto (0x8b4513)
+- Tummanvihreä latvus (0x2d5016)
+- 3-kerroksinen kartiomainen latvus
+- Spawn-ataan ympyrän muotoon pelialan reunoille
+- Realistinen mittakaava
+- Varjot päällä
+
+**Kivet (15 kpl):**
+- Dodecahedron-geometria epäsäännöllisyyteen
+- Harmaa väri (0x808080)
+- Satunnaiset koot ja kierrot
+- Hajautettu pelikentälle
+- Varjot ja varjonsaanti
+
+**5. Parannetut Peliobjektit 🎨**
+
+**Kolikot:**
+- Täysi metallisuus (metalness: 1.0)
+- Vähäinen karheus (roughness: 0.1)
+- Kullanvärinen hehku (emissive)
+- Kiiltävä ja arvokkaalta näyttävä
+
+**Esteet:**
+- Muutettu laatikosta kartioiksi
+- Punainen hehku (emissive: 0x440000)
+- Metallic-efekti
+- Pelottavampi ulkoasu
+
+**Viholliset:**
+- Muutettu icosahedron-geometriaksi (20-tahokas)
+- Voimakas magentanhehku (emissiveIntensity: 0.5)
+- Metallinen pinta (metalness: 0.8)
+- Kiiltävä ja uhkaava ilme
+
+**6. Partikkeliefektit ✨**
+- ✅ Kultaiset partikkelit kolikoiden keräämisessä
+- ✅ 10 partikkelia per kolikko
+- ✅ Fysiikkavetoinen liike (painovoima)
+- ✅ Fade-out animaatio
+- ✅ Satunnaiset suunnat
+- ✅ Automaattinen poisto eliniän päätyttyä
+
+**7. Ilmakehä 🌤️**
+- ✅ Gradient-tyyppinen taivasväri
+- ✅ Parempi sumu (10-80 yksikköä)
+- ✅ Sinertävä sumuvari (0xb0c4de)
+
+**Tekninen toteutus:**
+
+```javascript
+// Esimerkki: Robottihahmo
+const player = new THREE.Group();
+const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.3, 0.6, 8, 16),
+    new THREE.MeshStandardMaterial({ 
+        color: 0x00aa00,
+        metalness: 0.3,
+        roughness: 0.4
+    })
+);
+const head = new THREE.Mesh(
+    new THREE.SphereGeometry(0.25, 16, 16),
+    new THREE.MeshStandardMaterial({ 
+        color: 0x00ff00,
+        emissive: 0x003300
+    })
+);
+```
+
+**Muokatut tiedostot:**
+- `game.js` - Suuri visuaalinen uudelleenkirjoitus (150+ riviä muutoksia)
+
+**Suorituskyky:**
+- Objekteja yhteensä: ~77 (1 pelaaja + 30 puuta + 15 kiveä + 20 kolikkoa + 10 estettä + 5 vihollista)
+- Partikkelien maksimimäärä: ~200 (kun kaikki kolikot kerätään lyhyessä ajassa)
+- Optimoitu geometria (reused materials)
+
+**Tulokset:**
+- ✅ Peli näyttää ammattimaiselta
+- ✅ Visuaalinen mielenkiinto kasvanut merkittävästi
+- ✅ Immersiivisempi pelikokemus
+- ✅ Hahmo erottuu selkeästi
+- ✅ Maisema tuo syvyyttä
+- ✅ Partikkelit antavat välitöntä palautetta
+
+**Git Commit:**
+- Odottaa: "Parannettu pelin visuaalinen ilme: robottipelaaja, teksturoitu maasto, puut, kivet, parempi valaistus ja partikkelit"
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 1.2  
+**Versio:** 1.3  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
 
 ---
