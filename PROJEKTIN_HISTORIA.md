@@ -785,12 +785,17 @@ git push -u origin main
 - 🌐 Helppo jakaa muiden kanssa
 - 📝 Kehityshistoria tallessa
 
+**Git Commit -historia:**
+- `90813e8` - "Initial commit: 3D selainpeli Three.js:llä" (alkuperäinen versio)
+- `6058a6e` - "Initial commit: Three.js 3D game with player movement, coins, and obstacles" (ensimmäinen GitHub-push)
+- `112df0e` - "Päivitetty projektin historia: GitHub-tallennus dokumentoitu" (historian päivitys)
+
 ---
 
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 1.0  
+**Versio:** 1.1  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
 
 ---
 
-*Tämä dokumentti on luotu automaattisesti tekoälyn avulla projektin historian dokumentointia varten. Se sisältää kaikki keskusteluvaiheet, teknologiapäätökset ja tallennusversiot.*
+*Tämä dokumentti on luotu automaattisesti tekoälyn avulla projektin historian dokumentointia varten. Se sisältää kaikki keskusteluvaiheet, teknologiapäätökset, tallennusversiot ja Git-commitit.*
