@@ -79,17 +79,18 @@ fillLight.position.set(-5, 5, -5);
 scene.add(fillLight);
 
 // 🤖 PELAAJA - Ladataan 3D-malli
-let player = new THREE.Group(); // Väliaikainen placeholder
+let player = new THREE.Group();
 let playerModel = null;
-let playerMixer = null; // AnimationMixer animaatioille
+let playerMixer = null;
+let playerLoaded = false;
 
 // Lataa robotti-malli
 loader.load('models/robot.glb', (gltf) => {
-    // Poista vanha placeholder
-    scene.remove(player);
+    // Poista placeholder jos on
+    if (player.children.length > 0) {
+        player.children.forEach(child => player.remove(child));
+    }
     
-    // Luo uusi pelaaja mallin kanssa
-    player = new THREE.Group();
     playerModel = gltf.scene;
     
     // Skaalaa ja aseta malli
@@ -106,21 +107,17 @@ loader.load('models/robot.glb', (gltf) => {
     // Animaatiot
     if (gltf.animations && gltf.animations.length > 0) {
         playerMixer = new THREE.AnimationMixer(playerModel);
-        // Toista ensimmäinen animaatio (yleensä idle tai walk)
         const action = playerMixer.clipAction(gltf.animations[0]);
         action.play();
     }
     
-    player.position.set(0, 0, 0);
-    scene.add(player);
-    
-    // Lisää ase mallin käteen (jos tarvitaan)
+    // Lisää ase
     addWeaponToPlayer();
     
+    playerLoaded = true;
     console.log('✅ Robotti-malli ladattu!', gltf.animations.length, 'animaatiota');
 }, undefined, (error) => {
     console.error('❌ Virhe ladattaessa mallia:', error);
-    // Käytä fallback geometriaa
     createFallbackPlayer();
 });
 
@@ -134,7 +131,7 @@ function createFallbackPlayer() {
     const mesh = new THREE.Mesh(geometry, material);
     mesh.castShadow = true;
     player.add(mesh);
-    scene.add(player);
+    console.log('⚠️ Käytetään fallback-geometriaa pelaajalle');
 }
 
 // Lisää ase
@@ -185,8 +182,9 @@ function addWeaponToPlayer() {
     player.weapon = weapon;
 }
 
-// Alustava placeholder (kunnes malli latautuu)
-createFallbackPlayer();
+// Lisää pelaaja sceneen heti (tyhjänä, malli latautuu myöhemmin)
+player.position.set(0, 0, 0);
+scene.add(player);
 
 // Pelaajan fysiikka
 const playerState = {
