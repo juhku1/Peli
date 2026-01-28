@@ -15,7 +15,9 @@ const gameState = {
     maxAmmo: 30,
     reloading: false,
     canShoot: true,
-    shootCooldown: 0
+    shootCooldown: 0,
+    isShooting: false,
+    shootAnimationTimer: 0
 };
 
 // Hiiren ohjaus
@@ -664,6 +666,8 @@ function shoot() {
     // Cooldown seuraavaan ampumiseen
     gameState.canShoot = false;
     gameState.shootCooldown = 5; // 5 framea
+    gameState.isShooting = true;
+    gameState.shootAnimationTimer = 15; // Animaatio näkyy 15 framea
 }
 
 // Lataa ammukset
@@ -819,6 +823,14 @@ function animate() {
             gameState.canShoot = true;
         }
     }
+    
+    // Päivitä ampumisanimaatiotimer
+    if (gameState.shootAnimationTimer > 0) {
+        gameState.shootAnimationTimer--;
+        if (gameState.shootAnimationTimer === 0) {
+            gameState.isShooting = false;
+        }
+    }
 
     // Liikkuminen - nyt hiiren suuntaan nähden (FPS-tyyli)
     const forward = new THREE.Vector3(-Math.sin(mouse.yaw), 0, -Math.cos(mouse.yaw));
@@ -878,7 +890,10 @@ function animate() {
             // Valitse oikea animaatio
             let currentAction = null;
             
-            if (!playerState.onGround) {
+            if (gameState.isShooting) {
+                // Ampuu - etsi shoot/fire/attack animaatio (KORKEIN PRIORITEETTI)
+                currentAction = player.actions['TPose'] || player.actions['tpose'] || player.actions['Shoot'] || player.actions['shoot'] || player.actions['Fire'] || player.actions['fire'] || player.actions['Attack'] || player.actions['attack'];
+            } else if (!playerState.onGround) {
                 // Hyppää - etsi jump animaatio
                 currentAction = player.actions['Jump'] || player.actions['jump'] || actionNames[2];
             } else if (isMoving) {
