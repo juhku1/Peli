@@ -792,9 +792,7 @@ git push -u origin main
 - `f277ca2` - "Lisätty Git commit -historia projektin dokumentaatioon"
 - `f870377` - "Lisätty viholliset jotka jahtaavat pelaajaa" ⭐ (vihollisten toteutus)
 - `1e17f06` - "Dokumentoitu vihollisten lisäys projektin historiaan"
-- Odottaa: "Parannettu pelin visuaalinen ilme: robottipelaaja, teksturoitu maasto, puut, kivet, parempi valaistus ja partikkelit" ⭐⭐ (suuri visuaalinen päivitys)
-- Odottaa: "Dokumentoitu visuaaliset parannukset projektin historiaan"
-- Odottaa: "Lopullinen tallennus - kaikki muutokset dokumentoitu ja tallennettu"
+- `6caa084` - "Parannettu pelin visuaalinen ilme: robottipelaaja, teksturoitu maasto, puut, kivet, parempi valaistus ja partikkelit" ⭐⭐ (suuri visuaalinen päivitys)
 
 ---
 
