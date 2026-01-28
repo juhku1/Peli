@@ -13,6 +13,14 @@ const gameState = {
     shootCooldown: 0
 };
 
+// Hiiren ohjaus
+const mouse = {
+    yaw: 0,        // Vaakakierto (vasemmalle/oikealle)
+    pitch: -0.3,   // Pystykierto (ylös/alas)
+    sensitivity: 0.002,
+    isZooming: false
+};
+
 // Näppäimistön tila
 const keys = {
     forward: false,
@@ -364,11 +372,50 @@ document.addEventListener('keyup', (e) => {
     }
 });
 
+// Pointer Lock API - FPS-tyylinen hiiren ohjaus
+let isPointerLocked = false;
+
+document.addEventListener('click', () => {
+    if (!isPointerLocked) {
+        renderer.domElement.requestPointerLock();
+    }
+});
+
+document.addEventListener('pointerlockchange', () => {
+    isPointerLocked = document.pointerLockElement === renderer.domElement;
+});
+
+// Hiiren liike - tähtäys
+document.addEventListener('mousemove', (e) => {
+    if (isPointerLocked) {
+        mouse.yaw -= e.movementX * mouse.sensitivity;
+        mouse.pitch += e.movementY * mouse.sensitivity; // Korjattu: + eikä -
+        
+        // Rajoita pystykulmaa (ei voi katsoa liikaa ylös/alas)
+        mouse.pitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 6, mouse.pitch));
+    }
+});
+
 // Hiiren klikkaus - Ammu!
 document.addEventListener('mousedown', (e) => {
     if (e.button === 0 && !gameState.gameOver) { // Vasen nappi
         shoot();
+    } else if (e.button === 2) { // Oikea nappi - Zoom
+        e.preventDefault();
+        mouse.isZooming = true;
     }
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (e.button === 2) { // Oikea nappi - lopeta zoom
+        e.preventDefault();
+        mouse.isZooming = false;
+    }
+});
+
+// Esto oikealle hiiren napille (context menu)
+document.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
 });
 
 // Ammunta
@@ -388,36 +435,46 @@ function shoot() {
     });
     const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
     
-    // Ammus lähtee pelaajan edestä
-    projectile.position.copy(player.position);
-    projectile.position.y += 0.5; // Silmien korkeudelta
+    // Ammus lähtee pelaajan edestä (hiukan oikealta)
+    const spawnOffset = new THREE.Vector3(
+        Math.sin(mouse.yaw) * -2 + 0.5, // Eteen ja oikealle
+        0.5, // Silmien korkeudelta
+        Math.cos(mouse.yaw) * -2
+    );
+    projectile.position.copy(player.position).add(spawnOffset);
     
-    // Suunta: kameran offset -suunta (pelaaja katsoo -Z suuntaan kameran näkökulmasta)
-    const cameraOffset = new THREE.Vector3(0, 5, 10);
-    const direction = new THREE.Vector3(0, 0, -1);
+    // Suunta: täsmälleen sinne minne hiiri osoittaa
+    const direction = new THREE.Vector3(
+        -Math.sin(mouse.yaw),
+        -mouse.pitch, // Pystykierto mukaan
+        -Math.cos(mouse.yaw)
+    );
+    direction.normalize();
     
-    // Käännä suunta kameran mukaan (XZ-tasossa)
-    const angle = Math.atan2(cameraOffset.x, cameraOffset.z);
-    direction.applyAxisAngle(new THREE.Vector3(0, 1, 0), -angle);
-    
-    // Laske pelaajan liikkumissuunta näppäimistä
-    const moveDir = new THREE.Vector3(0, 0, 0);
-    if (keys.forward) moveDir.z -= 1;
-    if (keys.backward) moveDir.z += 1;
-    if (keys.left) moveDir.x -= 1;
-    if (keys.right) moveDir.x += 1;
-    
-    // Jos pelaaja liikkuu, ammu liikkumissuuntaan
-    if (moveDir.length() > 0) {
-        moveDir.normalize();
-        direction.copy(moveDir);
-    }
-    
-    projectile.velocity = direction.multiplyScalar(0.5);
-    projectile.life = 100; // frames
+    projectile.velocity = direction.multiplyScalar(0.8); // Nopeampi ammus
+    projectile.life = 150; // Pidempi elinikä
     
     scene.add(projectile);
     projectiles.push(projectile);
+    
+    // Muzzle flash - lyhyt välähdys ammuttaessa
+    const flashGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+    const flashMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xffff00,
+        transparent: true,
+        opacity: 1
+    });
+    const flash = new THREE.Mesh(flashGeometry, flashMaterial);
+    flash.position.copy(projectile.position);
+    scene.add(flash);
+    
+    // Poista flash nopeasti
+    setTimeout(() => {
+        flash.material.opacity = 0.5;
+        setTimeout(() => {
+            scene.remove(flash);
+        }, 50);
+    }, 50);
     
     // Vähennä ammuksia
     gameState.ammo--;
@@ -582,11 +639,26 @@ function animate() {
         }
     }
 
-    // Liikkuminen
-    if (keys.forward) player.position.z -= playerState.moveSpeed;
-    if (keys.backward) player.position.z += playerState.moveSpeed;
-    if (keys.left) player.position.x -= playerState.moveSpeed;
-    if (keys.right) player.position.x += playerState.moveSpeed;
+    // Liikkuminen - nyt hiiren suuntaan nähden (FPS-tyyli)
+    const forward = new THREE.Vector3(-Math.sin(mouse.yaw), 0, -Math.cos(mouse.yaw));
+    const right = new THREE.Vector3(Math.cos(mouse.yaw), 0, -Math.sin(mouse.yaw));
+    
+    if (keys.forward) {
+        player.position.x += forward.x * playerState.moveSpeed;
+        player.position.z += forward.z * playerState.moveSpeed;
+    }
+    if (keys.backward) {
+        player.position.x -= forward.x * playerState.moveSpeed;
+        player.position.z -= forward.z * playerState.moveSpeed;
+    }
+    if (keys.left) {
+        player.position.x -= right.x * playerState.moveSpeed;
+        player.position.z -= right.z * playerState.moveSpeed;
+    }
+    if (keys.right) {
+        player.position.x += right.x * playerState.moveSpeed;
+        player.position.z += right.z * playerState.moveSpeed;
+    }
 
     // Hyppy
     if (keys.jump && playerState.onGround) {
@@ -704,10 +776,33 @@ function animate() {
         });
     });
 
-    // Kamera seuraa pelaajaa
-    const cameraOffset = new THREE.Vector3(0, 5, 10);
+    // Kamera seuraa pelaajaa - Third Person Shooter tyyli
+    // Over-the-shoulder asemointi
+    const baseCameraDistance = mouse.isZooming ? 3 : 6; // Zoom lähemmäs
+    const cameraSide = 1.5; // Kamera oikealla puolella
+    const cameraHeight = 3;
+    
+    // Kameran asemointi hiiren ohjauksen mukaan
+    const cameraOffset = new THREE.Vector3(
+        Math.sin(mouse.yaw) * baseCameraDistance + cameraSide,
+        cameraHeight + mouse.pitch * 2,
+        Math.cos(mouse.yaw) * baseCameraDistance
+    );
+    
     camera.position.copy(player.position).add(cameraOffset);
-    camera.lookAt(player.position);
+    
+    // Kamera tähtää hiiren suuntaan
+    const lookAtPoint = new THREE.Vector3(
+        player.position.x - Math.sin(mouse.yaw) * 10,
+        player.position.y + 2 - mouse.pitch * 5,
+        player.position.z - Math.cos(mouse.yaw) * 10
+    );
+    
+    camera.lookAt(lookAtPoint);
+    
+    // FOV muuttuu zoomissa
+    camera.fov = mouse.isZooming ? 50 : 75;
+    camera.updateProjectionMatrix();
 
     renderer.render(scene, camera);
 }

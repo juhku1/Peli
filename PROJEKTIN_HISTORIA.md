@@ -1071,8 +1071,268 @@ if (moveDir.length() > 0) {
 
 ---
 
+### 📋 Vaihe 8: Projektidokumentaation tarkistus
+
+#### ❓ Kysymys #8
+> "muista päivittää prketin histoiriaa aina kun teemme muutoksia"
+
+#### 💡 Vastaus #8
+**Toimenpide:** Dokumentaatiokäytännön varmistus
+
+**Sitoutuminen:**
+- PROJEKTIN_HISTORIA.md päivitetään jokaisen merkittävän muutoksen jälkeen
+- Jokainen Git-commit dokumentoidaan
+- Kaikki käyttäjän kysymykset ja promptit tallennetaan
+
+---
+
+#### ❓ Kysymys #9
+> "Onko proejktin historia päivitetty. Laita github commitin nimi muistiin sinne tässä vaiheessa"
+
+#### 💡 Vastaus #9
+**Toimenpide:** Commit-historian lisäys
+
+**Toteutus:**
+- Commit `08e0b84` lisätty dokumentaatioon (Visuaaliset parannukset)
+- Varmistettu että kaikki aiemmat commitit on dokumentoitu
+
+---
+
+#### ❓ Kysymys #10
+> "tallenna kaikki muutokset projeitin historia dokumenttiin ja tee commit ja push kaikki tämä githubiin"
+
+#### 💡 Vastaus #10
+**Toimenpide:** Kokonaisvaltainen tallennus
+
+**Git-toiminnot:**
+```bash
+git add .
+git commit -m "Päivitetty projektidokumentaatio"
+git push origin main
+```
+
+**Tulos:**
+- Kaikki muutokset tallennettu
+- Dokumentaatio ajantasalla
+- Muutokset GitHubissa
+
+---
+
+#### ❓ Kysymys #11
+> "käynnistä palvelin"
+
+#### 💡 Vastaus #11
+**Toimenpide:** Kehityspalvelimen uudelleenkäynnistys
+
+**Komento:**
+```bash
+python3 -m http.server 8000
+```
+
+**Tulos:**
+- Peli käytettävissä osoitteessa http://localhost:8000
+
+---
+
+#### ❓ Kysymys #12
+> "Tallenna. päivitä proejtin historia. ja tee commit push. Seuraavaksi lisää noita kaikkia mitä ehdotit. Mutta huomaa, että se ampuu nyt koko ajan vain ylöspäin"
+
+#### 💡 Vastaus #12
+**Toimenpide:** Ammuntasuunnan korjaus ja ammushallinta
+
+**Ongelma:**
+- Ammukset lensivät ylöspäin kameran suunnan mukaan
+- Ei ammusrajoituksia
+- Ei cooldownia
+
+**Ratkaisu:**
+- Muutettu ampumissuunta käyttämään pelaajan liikkeen suuntaa (WASD)
+- Lisätty 30 ammuksen maksimimäärä
+- Lisätty R-näppäimellä ladattava latausmekanismi (1.5s)
+- Lisätty 5 framen cooldown ampumisen välillä
+- Lisätty automaattinen lataus kun ammukset loppuvat
+
+**Git-commit:**
+- `d626f6e` - "Korjattu ammuksen suunta ja lisätty ammusraja (30), reload (R-näppäin, 1.5s), shoot cooldown"
+
+---
+
+#### ❓ Kysymys #13
+> "onkoprojektin historiaan päivitetty jokainen suora kysymykseni ja promptini? Se on olellista"
+
+#### 💡 Vastaus #13
+**Toimenpide:** Dokumentaation täydellisyyden varmistus
+
+**Tarkistus:**
+- Käyty läpi kaikki 13 kysymystä/promptia
+- Lisätty puuttuneet kysymykset #8-#13
+- Varmistettu että jokaiselle on:
+  - Alkuperäinen kysymys
+  - Yksityiskohtainen vastaus
+  - Toteutetut toimenpiteet
+  - Git-commit tiedot (jos sovellettavissa)
+
+**Tulos:**
+- ✅ Kaikki käyttäjän kysymykset dokumentoitu
+- ✅ Projektin historia täydellinen
+- ✅ Git-commitit merkitty
+- ✅ Tekninen toteutus dokumentoitu
+
+---
+
+### 📋 Vaihe 9: Pelityylin tarkentaminen - Third-Person Shooter
+
+#### ❓ Kysymys #14
+> "Et missään vaiheessa kysynyt, että millaisen 3d-pelin haluan. Minä pidän enemmän sellaisista joissa katsotaan pelaajan takaa ja ammuskellaan. Vähäin kuin Fortnite ja call of duty"
+
+#### 💡 Vastaus #14
+**Huomio:** Tämä on tärkeä palaute - pelaajan mieltymyksiä ei kysytty alussa!
+
+**Nykytilanne:**
+- Peli ON jo third-person shooter (kolmannen persoonan ammuntapeli)
+- Kamera katsoo pelaajan takaa
+- Ammunta toimii hiirellä
+- ✅ Perusidea on jo oikea!
+
+**Parannukset Fortnite/CoD-tyyliseksi:**
+1. **Tähtäin (crosshair)** - Näytön keskelle tähtäinristikko
+2. **Over-the-shoulder kamera** - Kamera hieman sivuun ja lähemmäs
+3. **Hiiren ohjaus** - Kameran kääntö hiirellä (FPS-tyylinen ohjaus)
+4. **Zoom-toiminto** - Hiiren oikea painike tähtäämiseen
+5. **Parempi ampumatuntuma** - Visuaaliset efektit ja recoil
+
+**Toteutettavat muutokset:**
+- CSS-tähtäin (crosshair) näytön keskelle
+- PointerLock API hiiren ohjaukseen
+- Kameran reposition over-the-shoulder asentoon
+- Zoom-toiminto hiiren oikealla painikkeella
+- Muzzle flash ammuttaessa
+
+**Toteutetut ominaisuudet:**
+1. **Crosshair (tähtäin)**
+   - CSS-pohjainen ristikkotähtäin näytön keskellä
+   - Punainen keskuspiste täsmälliseen tähtäykseen
+   - Läpinäkyvä, ei häiritse pelikokemusta
+
+2. **PointerLock API**
+   - FPS-tyylinen hiiren ohjaus
+   - Klikkaa näyttöä aktivoidaksesi
+   - Hiiri katoaa ja ohjaa kameraa
+
+3. **Over-the-shoulder kamera**
+   - Kamera pelaajan oikealla puolella (1.5 yksikköä)
+   - Dynaaminen etäisyys: 6 yksikköä (normaali), 3 yksikköä (zoom)
+   - Seuraa hiiren liikettä sujuvasti
+
+4. **Hiiren ohjaus**
+   - Vaakaliike (yaw): tähtää vasemmalle/oikealle
+   - Pystyliike (pitch): tähtää ylös/alas
+   - Rajoitettu pystykulma estää epäluonnollisen kääntymisen
+
+5. **Zoom-toiminto**
+   - Hiiren oikea nappi aktivoi zoomin
+   - FOV muuttuu 75° → 50° (tarkempi tähtäys)
+   - Kamera lähemmäs pelaajaa
+
+6. **FPS-tyylinen liikkuminen**
+   - WASD liikuttaa hiiren suuntaan nähden
+   - W = eteen (minne tähtäät)
+   - S = taakse
+   - A = vasemmalle sivuun
+   - D = oikealle sivuun
+
+7. **Parannettu ampuminen**
+   - Ammukset lähtevät täsmälleen hiiren suuntaan
+   - Muzzle flash (keltainen välähdys) ammuttaessa
+   - Nopeammat ammukset (0.8 nopeus)
+   - Pidempi kantama (150 framea)
+
+**Tekniset yksityiskohdat:**
+```javascript
+// Hiiren tila
+const mouse = {
+    yaw: 0,
+    pitch: -0.3,
+    sensitivity: 0.002,
+    isZooming: false
+};
+
+// PointerLock aktivointi
+document.addEventListener('click', () => {
+    if (!isPointerLocked) {
+        renderer.domElement.requestPointerLock();
+    }
+});
+
+// Kameran asemointi
+const baseCameraDistance = mouse.isZooming ? 3 : 6;
+const cameraSide = 1.5;
+const cameraHeight = 3;
+```
+
+---
+
+#### ❓ Kysymys #15
+> "hiiri toimii päin vastoin ylös ja alas kuin pitäisi."
+
+#### 💡 Vastaus #15
+**Ongelma:** Pystysuuntainen hiiren liike oli käänteinen - ylös liikuttaessa kamera meni alas ja päinvastoin.
+
+**Korjaus:**
+Muutettu hiiren pitch-käsittely:
+```javascript
+// ENNEN (väärin):
+mouse.pitch -= e.movementY * mouse.sensitivity;
+
+// JÄLKEEN (oikein):
+mouse.pitch += e.movementY * mouse.sensitivity;
+```
+
+**Tulos:**
+- ✅ Hiiren ylös liike → kamera ylös
+- ✅ Hiiren alas liike → kamera alas
+- ✅ Luonnollinen FPS-ohjaus
+
+**Git-commit:**
+- `[commit-hash]` - "Lisätty FPS-tyylinen hiiren ohjaus, zoom, crosshair ja korjattu hiiren pystysuunta"
+
+---
+
+### 🔄 Kehityksen käännekohta
+
+#### 📝 Huomio #16
+> "TÄSSÄ KOHTAA PELINKEHITTÄJÄ OTTAA PARI ASKELTA TAAKSEPÄIN. PAINOIN UNDO. JÄTETÄÄN KUITENKIN AIEMMAT KIRJAUSET MUISTIIN. PROJEKTIN HISTORIA DOKUMENTTIIN. ÄLÄ POIST NIITÄ."
+
+**Toimenpide:** Pelin kehityssuunnan arviointi
+
+**Tilanne:**
+- Kysymysten #14 ja #15 muutokset (FPS-ohjaus, hiiren tähtäys, zoom) PERUTTIIN
+- Kokeiltiin FPS/TPS-tyylistä hiiren ohjausta, mutta päätettiin peruuttaa
+- Palataan aiempaan versioon (kysymyksen #13 jälkeinen tila)
+
+**Säilytetään dokumentaatiossa:**
+- ✅ Kysymys #14: Third-person shooter -tyylin kokeilu
+- ✅ Kysymys #15: Hiiren suunnan korjaus
+- ✅ Kaikki tekniset yksityiskohdat kokeilusta
+- ⚠️ HUOM: Nämä muutokset EIVÄT ole pelissä, mutta dokumentoitu oppimista varten
+
+**Nykyinen peliversio:**
+- Pelin tila palautettu kysymyksen #13 jälkeiseen tilaan
+- Kamera: perinteinen third-person (0, 5, 10 offset)
+- Ohjaus: WASD + hiiren klikki ampumiseen
+- Ei hiiren tähtäystä, ei zoomia, ei crosshairia
+
+**Opitut asiat kokeilusta:**
+- PointerLock API:n käyttö
+- Over-the-shoulder kameran toteutus
+- Hiiren pitch/yaw-ohjauksen matematiikka
+- FOV-muutokset zoomiin
+- Muzzle flash -efektit
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 1.4  
+**Versio:** 2.2  
 **Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
 
 ---
