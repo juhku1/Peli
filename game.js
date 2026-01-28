@@ -111,8 +111,11 @@ loader.load('models/robot.glb', (gltf) => {
         action.play();
     }
     
-    // Lisää ase
-    addWeaponToPlayer();
+    // Poista vanha ase jos on
+    if (player.weapon) {
+        player.remove(player.weapon);
+        player.weapon = null;
+    }
     
     playerLoaded = true;
     console.log('✅ Robotti-malli ladattu!', gltf.animations.length, 'animaatiota');
@@ -370,36 +373,31 @@ for (let i = 0; i < 10; i++) {
 
 // 🛸 VIHOLLISROBOTIT - Ladataan 3D-mallit
 const enemies = [];
-let enemyModelTemplate = null; // Template mallia varten
+let enemyModelTemplate = null;
 
-// Lataa vihollismalli
+// Luo viholliset heti fallback-geometrialla
+for (let i = 0; i < 5; i++) {
+    createFallbackEnemy();
+}
+
+// Lataa vihollismalli ja päivitä viholliset kun valmis
 loader.load('models/drone.glb', (gltf) => {
     enemyModelTemplate = gltf.scene;
     console.log('✅ Vihollismalli ladattu!');
     
-    // Luo viholliset mallipohjan avulla
-    for (let i = 0; i < 5; i++) {
-        createEnemy();
-    }
-}, undefined, (error) => {
-    console.error('❌ Virhe ladattaessa vihollismallia:', error);
-    // Fallback: luo geometriset viholliset
-    for (let i = 0; i < 5; i++) {
-        createFallbackEnemy();
-    }
-});
-
-function createEnemy() {
-    const enemy = new THREE.Group();
-    
-    if (enemyModelTemplate) {
-        // Käytä ladattua mallia
+    // Korvaa jokaisen vihollisen geometria mallilla
+    enemies.forEach(enemy => {
+        // Poista vanha geometria
+        while(enemy.children.length > 0) {
+            enemy.remove(enemy.children[0]);
+        }
+        
+        // Lisää malli
         const model = enemyModelTemplate.clone();
         model.scale.set(0.8, 0.8, 0.8);
         model.traverse((child) => {
             if (child.isMesh) {
                 child.castShadow = true;
-                // Värjää punaiseksi
                 if (child.material) {
                     child.material = child.material.clone();
                     child.material.emissive = new THREE.Color(0xff0033);
@@ -408,37 +406,10 @@ function createEnemy() {
             }
         });
         enemy.add(model);
-    } else {
-        // Fallback geometria
-        const coreGeometry = new THREE.OctahedronGeometry(0.5, 0);
-        const coreMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0xff0033,
-            emissive: 0xff0033,
-            emissiveIntensity: 0.8,
-            metalness: 0.9,
-            roughness: 0.1
-        });
-        const core = new THREE.Mesh(coreGeometry, coreMaterial);
-        core.castShadow = true;
-        enemy.add(core);
-        enemy.core = core;
-    }
-    
-    // Spawn vihollisia kaukana pelaajasta
-    const angle = Math.random() * Math.PI * 2;
-    const distance = 20 + Math.random() * 10;
-    enemy.position.set(
-        Math.cos(angle) * distance,
-        1.0,
-        Math.sin(angle) * distance
-    );
-    
-    enemy.speed = 0.05 + Math.random() * 0.03;
-    enemy.floatOffset = Math.random() * Math.PI * 2;
-    
-    scene.add(enemy);
-    enemies.push(enemy);
-}
+    });
+}, undefined, (error) => {
+    console.error('❌ Virhe ladattaessa vihollismallia:', error);
+});
 
 function createFallbackEnemy() {
     const enemy = new THREE.Group();
@@ -845,26 +816,37 @@ function animate() {
     const right = new THREE.Vector3(Math.cos(mouse.yaw), 0, -Math.sin(mouse.yaw));
     
     let isMoving = false;
+    let moveDirection = new THREE.Vector3(0, 0, 0);
     
     if (keys.forward) {
         player.position.x += forward.x * playerState.moveSpeed;
         player.position.z += forward.z * playerState.moveSpeed;
+        moveDirection.add(forward);
         isMoving = true;
     }
     if (keys.backward) {
         player.position.x -= forward.x * playerState.moveSpeed;
         player.position.z -= forward.z * playerState.moveSpeed;
+        moveDirection.sub(forward);
         isMoving = true;
     }
     if (keys.left) {
         player.position.x -= right.x * playerState.moveSpeed;
         player.position.z -= right.z * playerState.moveSpeed;
+        moveDirection.sub(right);
         isMoving = true;
     }
     if (keys.right) {
         player.position.x += right.x * playerState.moveSpeed;
         player.position.z += right.z * playerState.moveSpeed;
+        moveDirection.add(right);
         isMoving = true;
+    }
+    
+    // Käännä hahmo liikkumissuuntaan
+    if (isMoving && moveDirection.length() > 0) {
+        const targetAngle = Math.atan2(moveDirection.x, moveDirection.z);
+        player.rotation.y = targetAngle;
     }
     
     // 🎬 ANIMAATIO
