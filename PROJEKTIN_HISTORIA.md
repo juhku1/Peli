@@ -1819,9 +1819,173 @@ scene.fog = new THREE.FogExp2(0x000510, 0.015);
 
 ---
 
+### 📋 Vaihe 13: 3D-mallien hankinta - Quaternius
+
+#### ❓ Kysymys #24
+> "En ole tyytyväinen ulknäköön. Sanoit, että jostain vapaasti ladattavissa paremman näköisiä hahmoja, esineitä ja maisemia?"
+
+#### 💡 Vastaus #24
+**Ongelma:** Procedurally generoidut geometriat (laatikot, pallot) eivät näytä tarpeeksi ammattimaisilta.
+
+**Ratkaisu:** Ilmaiset 3D-mallit professioinalisilta 3D-artisteilta
+
+**Tarjotut lähteet:**
+
+1. **Mixamo** (Adobe)
+   - URL: https://www.mixamo.com
+   - Valmiit rigged hahmot + tuhansia animaatioita
+   - FBX, glTF formaatit
+   - Ilmainen (Adobe-tili)
+
+2. **Quaternius** ⭐
+   - URL: https://quaternius.com
+   - Low-poly asset paketit
+   - Ultimate Modular Sci-Fi (robotit, aseet, ympäristöt)
+   - .glb formaatti (suoraan Three.js:ään)
+   - CC0 lisenssi (täysin ilmainen käyttö)
+
+3. **Kenney.nl**
+   - URL: https://kenney.nl/assets
+   - Valtava kokoelma game assetteja
+   - .glb, .fbx formaatit
+   - Ilmainen
+
+4. **Sketchfab**
+   - URL: https://sketchfab.com
+   - Maailman suurin 3D-malli kirjasto
+   - CC-BY ja CC0 mallit
+   - .glb, .gltf formaatit
+
+5. **Poly Pizza**
+   - URL: https://poly.pizza
+   - Google Poly arkisto
+   - Low-poly mallit
+   - Ilmainen
+
+**Tekninen vaatimus:**
+- GLTFLoader (Three.js addon)
+- .glb/.gltf tiedostojen lataus ja renderöinti
+- Animaatioiden toisto (jos sisältää)
+
+---
+
+#### ❓ Kysymys #25
+> "Aloitetaan A (Tallenna tämä keskustelumme projektin historiaan.)"
+
+#### 💡 Vastaus #25
+**Valinta:** Quaternius - valmiit low-poly sci-fi mallit
+
+**Toimenpide:** Haetaan ja integroidaan:
+1. Robottihahmot (pelaaja ja viholliset)
+2. Sci-fi ympäristö (rakennukset, pylväät)
+3. Aseet ja efektit
+
+**Seuraavat askeleet:**
+- GLTFLoader lisäys
+- Mallien lataus Quaterniuksesta
+- Integrointi peliin
+- Animaatioiden käyttöönotto
+
+---
+
+### Vaihe 26: 3D-Mallien Integrointi (GLTFLoader)
+
+#### ❓ Kysymys #26
+> "Aloitetaan A" - Quaternius 3D-mallien integrointi
+
+#### 💡 Toteutus #26
+
+**Päivitetyt tiedostot:**
+1. `game.js` - Lisätty GLTFLoader ja mallilataukset
+
+**Tehdyt muutokset:**
+
+**1. GLTFLoader-lisäys:**
+```javascript
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const loader = new GLTFLoader();
+const clock = new THREE.Clock(); // Animaatioiden ajastus
+```
+
+**2. Pelaajan mallilataus:**
+- Poistettu proseduraalinen geometria (laatikot)
+- Lisätty asynkroninen GLB-mallin lataus
+- Fallback-geometria jos lataus epäonnistuu
+```javascript
+loader.load('models/robot.glb', (gltf) => {
+    playerModel = gltf.scene;
+    playerModel.scale.set(0.5, 0.5, 0.5);
+    
+    // Animaatiot
+    if (gltf.animations && gltf.animations.length > 0) {
+        playerMixer = new THREE.AnimationMixer(playerModel);
+        const action = playerMixer.clipAction(gltf.animations[0]);
+        action.play();
+    }
+});
+```
+
+**3. Vihollismallien lataus:**
+- Template-pohjainen kloonaus tehokkaampaan luontiin
+- Mallin värjäys punaiseksi (emissive)
+```javascript
+loader.load('models/drone.glb', (gltf) => {
+    enemyModelTemplate = gltf.scene;
+    for (let i = 0; i < 5; i++) {
+        createEnemy(); // Kloonaa templaten
+    }
+});
+```
+
+**4. Animaatiosysteemi:**
+- AnimationMixer pelaajalle
+- Delta-ajastus Clock-objektilla
+```javascript
+if (playerMixer) {
+    const delta = clock.getDelta();
+    playerMixer.update(delta);
+}
+```
+
+**Ladatut mallit:**
+- `models/robot.glb` (290KB) - RobotExpressive from glTF Sample Models
+- `models/drone.glb` (290KB) - Duck placeholder (päivitettävä)
+
+**Tekniset yksityiskohdat:**
+- Asynkroninen lataus (`loader.load()`)
+- Fallback-geometria jos lataus epäonnistuu
+- Shadow casting/receiving malleille
+- Material-kloonaus väritystä varten
+- Template-pattern vihollisille (1 lataus → 5 kloonia)
+
+**Edut:**
+- ✅ Parempi visuaalinen laatu
+- ✅ Oikeita 3D-animaatioita (ei proseduraalisia)
+- ✅ Pienempi koodimäärä
+- ✅ Helpompi päivittää malleja
+
+**Haasteet:**
+- ⏳ Latausajat (asynkroninen)
+- ⏳ Mallien koko (optimointi tarpeen)
+- ⏳ Animaatioiden synkronointi (walk/idle/run)
+
+**Seuraavat askeleet:**
+1. Lataa oikeat Quaternius-mallit
+2. Lisää walk/idle/run animaatiot
+3. Optimoi mallien koko
+4. Lisää latausnäyttö (loading screen)
+
+**Git-commit:**
+```bash
+git add .
+git commit -m "feat: lisätty GLTFLoader ja 3D-mallit (robot + drone)"
+```
+
+---
+
 **Dokumentin päivitys:** 28.1.2026  
-**Versio:** 3.0  
-**Seuraava päivitys:** Kun uusia ominaisuuksia lisätään
+**Versio:** 3.2  
+**Seuraava päivitys:** Kun Quaternius-mallit integroitu
 
 ---
 

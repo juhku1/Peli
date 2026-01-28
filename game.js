@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// GLTF Loader 3D-mallien lataamiseen
+const loader = new GLTFLoader();
+const clock = new THREE.Clock(); // Animaatioiden ajastukseen
 
 // Pelin tila
 const gameState = {
@@ -73,148 +78,115 @@ const fillLight = new THREE.DirectionalLight(0x8888ff, 0.3);
 fillLight.position.set(-5, 5, -5);
 scene.add(fillLight);
 
-// 🤖 SCI-FI ROBOTTIPELAAJA - Animoitu humanoidi
-const player = new THREE.Group();
+// 🤖 PELAAJA - Ladataan 3D-malli
+let player = new THREE.Group(); // Väliaikainen placeholder
+let playerModel = null;
+let playerMixer = null; // AnimationMixer animaatioille
 
-// VARTALO (metallinsininen)
-const torsoGeometry = new THREE.BoxGeometry(0.6, 0.8, 0.4);
-const torsoMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x1a3a5a,
-    metalness: 0.9,
-    roughness: 0.2,
-    emissive: 0x0a1a2a,
-    emissiveIntensity: 0.3
-});
-const torso = new THREE.Mesh(torsoGeometry, torsoMaterial);
-torso.position.y = 0.4;
-torso.castShadow = true;
-player.add(torso);
-
-// PÄÄ (neon cyan)
-const headGeometry = new THREE.BoxGeometry(0.4, 0.4, 0.4);
-const headMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x00ffff,
-    metalness: 0.8,
-    roughness: 0.1,
-    emissive: 0x00ffff,
-    emissiveIntensity: 0.5
-});
-const head = new THREE.Mesh(headGeometry, headMaterial);
-head.position.y = 1.0;
-head.castShadow = true;
-player.add(head);
-
-// VIISORI (hehkuva lasi)
-const visorGeometry = new THREE.PlaneGeometry(0.35, 0.15);
-const visorMaterial = new THREE.MeshBasicMaterial({ 
-    color: 0xff00ff,
-    transparent: true,
-    opacity: 0.8
-});
-const visor = new THREE.Mesh(visorGeometry, visorMaterial);
-visor.position.set(0, 1.0, 0.21);
-player.add(visor);
-
-// JALAT (animoidut)
-const legGeometry = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-const legMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x2a4a6a,
-    metalness: 0.8,
-    roughness: 0.3
+// Lataa robotti-malli
+loader.load('models/robot.glb', (gltf) => {
+    // Poista vanha placeholder
+    scene.remove(player);
+    
+    // Luo uusi pelaaja mallin kanssa
+    player = new THREE.Group();
+    playerModel = gltf.scene;
+    
+    // Skaalaa ja aseta malli
+    playerModel.scale.set(0.5, 0.5, 0.5);
+    playerModel.traverse((child) => {
+        if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+        }
+    });
+    
+    player.add(playerModel);
+    
+    // Animaatiot
+    if (gltf.animations && gltf.animations.length > 0) {
+        playerMixer = new THREE.AnimationMixer(playerModel);
+        // Toista ensimmäinen animaatio (yleensä idle tai walk)
+        const action = playerMixer.clipAction(gltf.animations[0]);
+        action.play();
+    }
+    
+    player.position.set(0, 0, 0);
+    scene.add(player);
+    
+    // Lisää ase mallin käteen (jos tarvitaan)
+    addWeaponToPlayer();
+    
+    console.log('✅ Robotti-malli ladattu!', gltf.animations.length, 'animaatiota');
+}, undefined, (error) => {
+    console.error('❌ Virhe ladattaessa mallia:', error);
+    // Käytä fallback geometriaa
+    createFallbackPlayer();
 });
 
-const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-leftLeg.position.set(-0.2, -0.35, 0);
-leftLeg.castShadow = true;
-player.add(leftLeg);
-player.leftLeg = leftLeg; // Viite animaatiota varten
+// Fallback: yksinkertainen geometria jos mallia ei saada
+function createFallbackPlayer() {
+    const geometry = new THREE.CapsuleGeometry(0.3, 0.6, 8, 16);
+    const material = new THREE.MeshStandardMaterial({ 
+        color: 0x00aaff,
+        metalness: 0.8
+    });
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.castShadow = true;
+    player.add(mesh);
+    scene.add(player);
+}
 
-const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-rightLeg.position.set(0.2, -0.35, 0);
-rightLeg.castShadow = true;
-player.add(rightLeg);
-player.rightLeg = rightLeg; // Viite animaatiota varten
+// Lisää ase
+function addWeaponToPlayer() {
+    const weapon = new THREE.Group();
+    
+    // Päärunko (neon sininen)
+    const weaponBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.08, 0.12, 0.6),
+        new THREE.MeshStandardMaterial({ 
+            color: 0x0066ff,
+            metalness: 0.9,
+            roughness: 0.1,
+            emissive: 0x0033aa,
+            emissiveIntensity: 0.3
+        })
+    );
+    weapon.add(weaponBody);
+    
+    // Energia-piippu
+    const barrel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.03, 0.03, 0.4, 8),
+        new THREE.MeshStandardMaterial({ 
+            color: 0x00ffff,
+            metalness: 1.0,
+            roughness: 0.0,
+            emissive: 0x00ffff,
+            emissiveIntensity: 0.5
+        })
+    );
+    barrel.rotation.x = Math.PI / 2;
+    barrel.position.set(0, 0, -0.5);
+    weapon.add(barrel);
+    
+    // Energia-ydin
+    const core = new THREE.Mesh(
+        new THREE.SphereGeometry(0.04, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xff00ff })
+    );
+    core.position.set(0, 0, 0.15);
+    weapon.add(core);
+    weapon.core = core;
+    
+    // Aseta ase pelaajaan
+    weapon.position.set(0.3, 0.5, -0.3);
+    weapon.rotation.y = -0.3;
+    player.add(weapon);
+    player.weapon = weapon;
+}
 
-// KÄDET (animoidut)
-const armGeometry = new THREE.BoxGeometry(0.15, 0.6, 0.15);
-const armMaterial = new THREE.MeshStandardMaterial({ 
-    color: 0x2a4a6a,
-    metalness: 0.8,
-    roughness: 0.3
-});
-
-const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-leftArm.position.set(-0.4, 0.3, 0);
-leftArm.castShadow = true;
-player.add(leftArm);
-player.leftArm = leftArm;
-
-const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-rightArm.position.set(0.4, 0.3, 0);
-rightArm.castShadow = true;
-player.add(rightArm);
-player.rightArm = rightArm;
-
-// NEONVALOT vartalossa
-const lightGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-const lightMaterial = new THREE.MeshBasicMaterial({ color: 0x00ffff });
-const light1 = new THREE.Mesh(lightGeometry, lightMaterial);
-light1.position.set(-0.2, 0.5, 0.21);
-player.add(light1);
-const light2 = new THREE.Mesh(lightGeometry, lightMaterial);
-light2.position.set(0.2, 0.5, 0.21);
-player.add(light2);
-
-// 🔫 SCI-FI ASE
-const weapon = new THREE.Group();
-
-// Päärunko (neon sininen)
-const weaponBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.18, 0.9),
-    new THREE.MeshStandardMaterial({ 
-        color: 0x0066ff,
-        metalness: 0.9,
-        roughness: 0.1,
-        emissive: 0x0033aa,
-        emissiveIntensity: 0.3
-    })
-);
-weapon.add(weaponBody);
-
-// Energia-piippu (cyan hehku)
-const barrel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.04, 0.04, 0.6, 8),
-    new THREE.MeshStandardMaterial({ 
-        color: 0x00ffff,
-        metalness: 1.0,
-        roughness: 0.0,
-        emissive: 0x00ffff,
-        emissiveIntensity: 0.5
-    })
-);
-barrel.rotation.x = Math.PI / 2;
-barrel.position.set(0, 0, -0.75);
-weapon.add(barrel);
-
-// Energia-ydin (pulssoiva)
-const core = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 8, 8),
-    new THREE.MeshBasicMaterial({ color: 0xff00ff })
-);
-core.position.set(0, 0, 0.2);
-weapon.add(core);
-weapon.core = core; // Viite animaatiota varten
-
-// Aseta ase oikeaan käteen
-weapon.position.set(0.4, 0.3, -0.4);
-weapon.rotation.y = -0.3;
-player.add(weapon);
-
-// Tallenna viite aseeseen
-player.weapon = weapon;
-
-player.position.set(0, 0.5, 0);
-scene.add(player);
+// Alustava placeholder (kunnes malli latautuu)
+createFallbackPlayer();
 
 // Pelaajan fysiikka
 const playerState = {
@@ -398,13 +370,82 @@ for (let i = 0; i < 10; i++) {
     createObstacle();
 }
 
-// 🛸 SCI-FI VIHOLLISROBOTIT - Drone-tyyliset
+// 🛸 VIHOLLISROBOTIT - Ladataan 3D-mallit
 const enemies = [];
+let enemyModelTemplate = null; // Template mallia varten
+
+// Lataa vihollismalli
+loader.load('models/drone.glb', (gltf) => {
+    enemyModelTemplate = gltf.scene;
+    console.log('✅ Vihollismalli ladattu!');
+    
+    // Luo viholliset mallipohjan avulla
+    for (let i = 0; i < 5; i++) {
+        createEnemy();
+    }
+}, undefined, (error) => {
+    console.error('❌ Virhe ladattaessa vihollismallia:', error);
+    // Fallback: luo geometriset viholliset
+    for (let i = 0; i < 5; i++) {
+        createFallbackEnemy();
+    }
+});
 
 function createEnemy() {
     const enemy = new THREE.Group();
     
-    // Päärunko (punainen kulmik)
+    if (enemyModelTemplate) {
+        // Käytä ladattua mallia
+        const model = enemyModelTemplate.clone();
+        model.scale.set(0.8, 0.8, 0.8);
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.castShadow = true;
+                // Värjää punaiseksi
+                if (child.material) {
+                    child.material = child.material.clone();
+                    child.material.emissive = new THREE.Color(0xff0033);
+                    child.material.emissiveIntensity = 0.5;
+                }
+            }
+        });
+        enemy.add(model);
+    } else {
+        // Fallback geometria
+        const coreGeometry = new THREE.OctahedronGeometry(0.5, 0);
+        const coreMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xff0033,
+            emissive: 0xff0033,
+            emissiveIntensity: 0.8,
+            metalness: 0.9,
+            roughness: 0.1
+        });
+        const core = new THREE.Mesh(coreGeometry, coreMaterial);
+        core.castShadow = true;
+        enemy.add(core);
+        enemy.core = core;
+    }
+    
+    // Spawn vihollisia kaukana pelaajasta
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 20 + Math.random() * 10;
+    enemy.position.set(
+        Math.cos(angle) * distance,
+        1.0,
+        Math.sin(angle) * distance
+    );
+    
+    enemy.speed = 0.05 + Math.random() * 0.03;
+    enemy.floatOffset = Math.random() * Math.PI * 2;
+    
+    scene.add(enemy);
+    enemies.push(enemy);
+}
+
+function createFallbackEnemy() {
+    const enemy = new THREE.Group();
+    
+    // Päärunko (punainen kulmikas)
     const coreGeometry = new THREE.OctahedronGeometry(0.5, 0);
     const coreMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xff0033,
@@ -416,9 +457,9 @@ function createEnemy() {
     const core = new THREE.Mesh(coreGeometry, coreMaterial);
     core.castShadow = true;
     enemy.add(core);
-    enemy.core = core; // Animaatiota varten
+    enemy.core = core;
     
-    // Energia-renkaat (kelluvat ympärillä)
+    // Energia-renkaat
     const ringGeometry = new THREE.TorusGeometry(0.7, 0.05, 8, 16);
     const ringMaterial = new THREE.MeshBasicMaterial({ 
         color: 0xff00ff,
@@ -447,25 +488,20 @@ function createEnemy() {
         enemy.add(light);
     }
     
-    // Spawn vihollisia kaukana pelaajasta
+    // Spawn kaukana
     const angle = Math.random() * Math.PI * 2;
     const distance = 20 + Math.random() * 10;
     enemy.position.set(
         Math.cos(angle) * distance,
-        1.5, // Kelluvat ilmassa
+        1.5,
         Math.sin(angle) * distance
     );
     
     enemy.speed = 0.05 + Math.random() * 0.03;
-    enemy.floatOffset = Math.random() * Math.PI * 2; // Kellunta-animaatio
+    enemy.floatOffset = Math.random() * Math.PI * 2;
     
     scene.add(enemy);
     enemies.push(enemy);
-}
-
-// Luo 5 vihollista
-for (let i = 0; i < 5; i++) {
-    createEnemy();
 }
 
 // Kamera seuraa pelaajaa
@@ -833,22 +869,22 @@ function animate() {
         isMoving = true;
     }
     
-    // 🎬 KÄVELYANIMAATIO
-    if (isMoving && playerState.onGround) {
-        const walkCycle = Date.now() * 0.01; // Aika-pohjainen animaatio
-        
-        // Jalat vaihtelevat (yksi eteen, toinen taakse)
+    // 🎬 ANIMAATIO
+    // Päivitä 3D-mallin animaatiot
+    if (playerMixer) {
+        const delta = clock.getDelta();
+        playerMixer.update(delta);
+    }
+    
+    // Kävelyanimaatio vanhoille geometrioille (fallback)
+    if (player.leftLeg && isMoving && playerState.onGround) {
+        const walkCycle = Date.now() * 0.01;
         player.leftLeg.rotation.x = Math.sin(walkCycle) * 0.4;
         player.rightLeg.rotation.x = Math.sin(walkCycle + Math.PI) * 0.4;
-        
-        // Kädet heiluvat vastakkaissuuntiin
         player.leftArm.rotation.x = Math.sin(walkCycle + Math.PI) * 0.3;
         player.rightArm.rotation.x = Math.sin(walkCycle) * 0.3;
-        
-        // Koko vartalo bobaa (ylös-alas liike)
         player.position.y = 0.5 + Math.abs(Math.sin(walkCycle * 2)) * 0.05;
-    } else {
-        // Palautetaan neutraaliin asentoon kun ei liiku
+    } else if (player.leftLeg) {
         player.leftLeg.rotation.x *= 0.9;
         player.rightLeg.rotation.x *= 0.9;
         player.leftArm.rotation.x *= 0.9;
@@ -856,10 +892,10 @@ function animate() {
     }
     
     // 🔫 ASEEN PULSSI-ANIMAATIO
-    if (weapon.core) {
+    if (player.weapon && player.weapon.core) {
         const pulse = Math.sin(Date.now() * 0.005) * 0.5 + 1.0;
-        weapon.core.material.emissiveIntensity = pulse;
-        weapon.core.scale.setScalar(0.8 + pulse * 0.2);
+        player.weapon.core.material.emissiveIntensity = pulse;
+        player.weapon.core.scale.setScalar(0.8 + pulse * 0.2);
     }
 
     // Hyppy
