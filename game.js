@@ -115,6 +115,52 @@ const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
 rightEye.position.set(0.1, 0.65, 0.2);
 player.add(rightEye);
 
+// ASE - Yksinkertainen kivääri
+const weapon = new THREE.Group();
+
+// Aseen runko (musta)
+const weaponBody = new THREE.Mesh(
+    new THREE.BoxGeometry(0.1, 0.15, 0.8),
+    new THREE.MeshStandardMaterial({ 
+        color: 0x1a1a1a,
+        metalness: 0.8,
+        roughness: 0.2
+    })
+);
+weapon.add(weaponBody);
+
+// Piippu (sinertävä)
+const barrel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8),
+    new THREE.MeshStandardMaterial({ 
+        color: 0x2a2a3a,
+        metalness: 0.9,
+        roughness: 0.1
+    })
+);
+barrel.rotation.x = Math.PI / 2;
+barrel.position.set(0, 0, -0.65);
+weapon.add(barrel);
+
+// Kahva
+const grip = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.2, 0.1),
+    new THREE.MeshStandardMaterial({ 
+        color: 0x3a2a1a,
+        roughness: 0.8
+    })
+);
+grip.position.set(0, -0.15, 0.1);
+weapon.add(grip);
+
+// Aseta ase pelaajan oikealle puolelle
+weapon.position.set(0.25, 0.3, -0.3);
+weapon.rotation.y = -0.2;
+player.add(weapon);
+
+// Tallenna viite aseeseen
+player.weapon = weapon;
+
 player.position.set(0, 0.5, 0);
 scene.add(player);
 
@@ -435,34 +481,50 @@ function shoot() {
     });
     const projectile = new THREE.Mesh(projectileGeometry, projectileMaterial);
     
-    // MODERNI TAPA: Ammus lähtee kameran sijainnista
-    // Tämä varmistaa että se menee täsmälleen crosshairiin
-    projectile.position.copy(camera.position);
+    // 1. TÄHTÄYS: Raycasting kameran keskeltä (crosshair osoittaa tänne)
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
     
-    // Suunta: Raycasting kameran keskeltä eteenpäin
-    // Näin ammus menee TÄSMÄLLEEN sinne minne kamera katsoo
+    // Tarkista osuuko johonkin objektiin
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    
+    // Tähtäyspiste: joko osuma tai 1000 yksikköä kameran suuntaan
+    const aimPoint = new THREE.Vector3();
+    if (intersects.length > 0) {
+        // Osui johonkin - käytä osumapistettä
+        aimPoint.copy(intersects[0].point);
+    } else {
+        // Ei osumaa - tähtää kauas eteenpäin
+        raycaster.ray.at(1000, aimPoint);
+    }
+    
+    // 2. ASEEN PIIPUN SIJAINTI maailmankoordinaateissa
+    // Lasketaan piipun pää oikein aseen transformaation kautta
+    const barrelTip = new THREE.Vector3(0, 0, -0.9);
+    player.weapon.localToWorld(barrelTip);
+    
+    // Ammus lähtee piipun päästä
+    projectile.position.copy(barrelTip);
+    
+    // 3. SUUNTA: Piipusta kohti tähtäyspistettä
     const direction = new THREE.Vector3();
-    camera.getWorldDirection(direction);
-    direction.normalize();
+    direction.subVectors(aimPoint, barrelTip).normalize();
     
-    projectile.velocity = direction.multiplyScalar(1.0); // Nopeus
-    projectile.life = 150; // Pidempi elinikä
+    projectile.velocity = direction.multiplyScalar(1.2); // Hieman nopeampi
+    projectile.life = 150;
     
     scene.add(projectile);
     projectiles.push(projectile);
     
-    // Muzzle flash - näytetään pelaajan edessä (visuaalinen efekti)
-    const flashGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+    // Muzzle flash piipun päässä
+    const flashGeometry = new THREE.SphereGeometry(0.2, 8, 8);
     const flashMaterial = new THREE.MeshBasicMaterial({ 
         color: 0xffff00,
         transparent: true,
         opacity: 1
     });
     const flash = new THREE.Mesh(flashGeometry, flashMaterial);
-    // Flash näytetään pelaajan edessä, vaikka ammus lähteekin kamerasta
-    flash.position.copy(player.position);
-    flash.position.y += 1;
-    flash.position.add(direction.clone().multiplyScalar(1));
+    flash.position.copy(barrelTip);
     scene.add(flash);
     
     // Poista flash nopeasti
